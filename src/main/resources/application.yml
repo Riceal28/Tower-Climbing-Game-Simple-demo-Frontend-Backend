@@ -35,3 +35,4 @@ spring:
           max-idle: 8
           min-idle: 0
           max-wait: -1ms  # 获取连接最大等待时间
+        shutdown-timeout: 100ms  # 关闭超时时间

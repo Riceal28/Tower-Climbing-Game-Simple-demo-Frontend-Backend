@@ -63,10 +63,10 @@
             <version>9.3.0</version>
         </dependency>
 
-        <!-- Redis客户端 -->
+        <!-- Redis -->
         <dependency>
-            <groupId>io.lettuce</groupId>
-            <artifactId>lettuce-core</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
         <!-- 对象池工具包 -->
