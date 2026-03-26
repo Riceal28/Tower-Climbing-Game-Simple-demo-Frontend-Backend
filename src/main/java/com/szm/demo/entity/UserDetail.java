@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 
 /**
  * 用户详情表实体类
- * 对应数据库表：user_detail
  */
 public class UserDetail {
 

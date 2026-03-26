@@ -2,6 +2,7 @@ package com.szm.demo.common.Interceptor;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
@@ -36,7 +37,10 @@ public class LoginInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) {
-
+        //放行预检请求
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
         String token = request.getHeader("Authorization");
         if (token == null || token.isBlank()) {
             throw new BusinessException(ResultCode.UNAUTHORIZED, "用户未登录");
@@ -56,10 +60,14 @@ public class LoginInterceptor implements HandlerInterceptor {
             }
             redisUtil.set(key, userInfo, EXPIRE_TIME, TimeUnit.MINUTES);
         }
-        jwtUtil.verify(token);
+        DecodedJWT jwt = jwtUtil.verify(token);
 
+        String jti = jwt.getId();
+        if(redisUtil.hasKey(RedisKeyConstants.USER_TOKEN_OUT.getKey(jti))){
+            throw new BusinessException(ResultCode.UNAUTHORIZED,"登录状态已过期");
+        }
         request.setAttribute("userId", userId);
-        logger.info("User: {} 登录成功, token:{}", userInfo.getUsername(), token);
+        logger.info("User: {} 验证成功, token:{}", userInfo.getUsername(), token);
         return true;
     }
 }

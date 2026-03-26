@@ -12,7 +12,10 @@ public enum RedisKeyConstants {
 //    MONSTER_ACTION_INFO("monsterActionInfo:"),
 //    BATTLE_INFO("battleInfo:");
     USER_INFO("demo:user:info:%s"),
-    USER_LOGIN("demo:user:login:%s");
+    USER_LOGIN("demo:user:login:%s"),
+    USER_DETAIL("demo:user:detail:%s"),
+    USER_TOKEN_IN("demo:user:token:%s"),
+    USER_TOKEN_OUT("demo:user:token:black:%s");
 
     private final String key;
 

@@ -7,7 +7,6 @@ init:
     username: root
     password: root
     database-name: demo_tower
-
 spring:
   application:
     name: Simple-Demo
@@ -36,3 +35,6 @@ spring:
           min-idle: 0
           max-wait: -1ms  # 获取连接最大等待时间
         shutdown-timeout: 100ms  # 关闭超时时间
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true #开启驼峰命名转换

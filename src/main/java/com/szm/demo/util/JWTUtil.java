@@ -8,17 +8,23 @@ import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.ResultCode;
 import org.springframework.stereotype.Component;
 
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Date;
 
 @Component
 public class JWTUtil {
 
     private final String SECRET = "tower-climbing-demo";
-    private final Long EXPIRY_TIME = 7 * 24 * 60 * 60 * 1000L;
+    private final Long EXPIRY_TIME = 30 * 60 * 1000L; // 30分钟
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final int JTI_LENGTH = 16; // 16字节 = 128位
 
-    public String generateToken(Long userId, String email) {
+    public String generateToken(Long userId,String username, String email) {
         return JWT.create()
+                .withJWTId(generateJTI())
                 .withAudience(userId.toString())
+                .withClaim("username",username)
                 .withClaim("email", email)
                 .withIssuedAt(new Date(System.currentTimeMillis()))
                 .withExpiresAt(new Date(System.currentTimeMillis() + EXPIRY_TIME))
@@ -43,6 +49,14 @@ public class JWTUtil {
         } catch (Exception e) {
             throw new BusinessException(ResultCode.UNAUTHORIZED,"用户身份无效");
         }
-
+    }
+    public String generateJTI(){
+        byte[] bytes = new byte[JTI_LENGTH];
+        SECURE_RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+    public String getJTI(String token){
+        return JWT.decode(token)
+                .getId();
     }
 }
