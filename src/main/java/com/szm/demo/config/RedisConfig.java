@@ -51,10 +51,10 @@ public class RedisConfig {
         ObjectMapper objectMapper = new ObjectMapper();
         // 所有属性可见
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        // 启用默认类型(存储类型信息)
-        objectMapper.activateDefaultTyping(
-                LaissezFaireSubTypeValidator.instance,ObjectMapper.DefaultTyping.NON_FINAL
-        );
+//        // 启用默认类型(存储类型信息)
+//        objectMapper.activateDefaultTyping(
+//                LaissezFaireSubTypeValidator.instance,ObjectMapper.DefaultTyping.NON_FINAL
+//        );
         // 注册Java8时间模块(LocalDateTime等)
         objectMapper.registerModule(new JavaTimeModule());
 
