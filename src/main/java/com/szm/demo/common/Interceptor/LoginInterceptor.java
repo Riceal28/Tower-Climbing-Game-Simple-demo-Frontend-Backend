@@ -24,7 +24,7 @@ public class LoginInterceptor implements HandlerInterceptor {
 
     final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final Long EXPIRE_TIME = 30L;
+    private final Long EXPIRE_TIME = 1440L;
 
     @Autowired
     UserInfoMapper userInfoMapper;
@@ -37,7 +37,7 @@ public class LoginInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) {
-        //放行预检请求
+        //放行浏览器预检请求
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true;
         }
