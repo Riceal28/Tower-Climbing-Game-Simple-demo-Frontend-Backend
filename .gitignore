@@ -3,3 +3,4 @@
 /target/
 /app.log
 /app.log.1
+/src/main/resources/application-local.yml
