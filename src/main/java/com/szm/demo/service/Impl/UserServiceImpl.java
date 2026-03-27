@@ -6,10 +6,8 @@ import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.dto.UserLoginReq;
 import com.szm.demo.dto.UserRegisterReq;
-import com.szm.demo.entity.LevelInfo;
 import com.szm.demo.entity.UserDetail;
 import com.szm.demo.entity.UserInfo;
-import com.szm.demo.mapper.LevelInfoMapper;
 import com.szm.demo.mapper.UserDetailMapper;
 import com.szm.demo.mapper.UserInfoMapper;
 import com.szm.demo.service.UserService;
@@ -24,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -44,10 +41,6 @@ public class UserServiceImpl implements UserService {
     @Autowired
     UserDetailMapper userDetailMapper;
 
-    @Autowired
-    LevelInfoMapper levelInfoMapper;
-
-
     @Override
     public void register(UserRegisterReq req) {
         if (req == null || req.getUsername().isBlank()
@@ -61,7 +54,7 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ResultCode.DATA_DUPLICATE, "该用户已存在");
         }
         String key = RedisKeyConstants.USER_INFO.getKey(userInfo.getId());
-        redisUtil.set(key, userInfo, 30, TimeUnit.MINUTES);
+        redisUtil.set(key, userInfo, 1440, TimeUnit.MINUTES);
         jwtUtil.generateToken(userInfo.getId(), userInfo.getUsername(), userInfo.getEmail());
     }
 
@@ -82,43 +75,9 @@ public class UserServiceImpl implements UserService {
         String token = jwtUtil.generateToken(userInfo.getId(), userInfo.getUsername(), userInfo.getEmail());
         String jti = jwtUtil.getJTI(token);
         String key = RedisKeyConstants.USER_TOKEN_IN.getKey(jti);
-        redisUtil.set(key, "1", 30, TimeUnit.MINUTES);
+        redisUtil.set(key, "1", 1440, TimeUnit.MINUTES);
         logger.info("User: {} 登录成功, token:{}", userInfo.getUsername(), token);
         return token;
-    }
-
-    @Override
-    @Transactional//抛出异常自动回滚
-    public void createDefaultPlayer(Long userId) {
-        if (userDetailMapper.getByUserId(userId) != null) {
-            throw new BusinessException(ResultCode.DATA_DUPLICATE, "已拥有角色");
-        }
-        try {
-            LevelInfo levelInfo = levelInfoMapper.getByLevel(1);
-            UserDetail userDetail = new UserDetail();
-            userDetail.setUserId(userId);
-            userDetail.setLevel(levelInfo.getLevel());
-            userDetail.setExp(0L);
-            userDetail.setCurrentHp(levelInfo.getMaxHp());
-            userDetail.setCurrentMp(levelInfo.getMaxMp());
-            userDetail.setAttackBase(levelInfo.getAttackBase());
-            userDetail.setCreateTime(LocalDateTime.now());
-            userDetail.setUpdateTime(LocalDateTime.now());
-            userDetailMapper.insert(userDetail);
-
-            TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            String key = RedisKeyConstants.USER_DETAIL.getKey(userId);
-                            redisUtil.set(key, userDetail, 30, TimeUnit.MINUTES);
-                        }
-                    }
-            );
-        } catch (Exception e) {
-            logger.error("用户ID[{}]:创建角色失败", userId, e);
-            throw new BusinessException(ResultCode.SYSTEM_ERROR);
-        }
     }
 
     @Override
@@ -134,4 +93,72 @@ public class UserServiceImpl implements UserService {
         logger.info("User: {} 登出成功, token:{}", jwt.getClaim("username"), token);
     }
 
+    @Override
+    public UserDetail getUserDetail(Long userId) {
+        if (userId == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        String key = RedisKeyConstants.USER_DETAIL.getKey(userId);
+        UserDetail userDetail = redisUtil.get(key, UserDetail.class);
+        if (userDetail == null) {
+            userDetail = userDetailMapper.getByUserId(userId);
+            if (userDetail == null) {
+                logger.error("用户信息不存在");
+                throw new BusinessException(ResultCode.NOT_FOUND, "用户信息不存在");
+            }
+            redisUtil.set(key, userDetail, 1440, TimeUnit.HOURS);
+        }
+        logger.info("查询了一次用户详情");
+        return userDetail;
+    }
+
+    @Override
+    @Transactional
+    public void setUserDetail(UserDetail userDetail) {
+        if (userDetail == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        if (userDetail.getUserId() == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        Long userId = userDetail.getUserId();
+        String key = RedisKeyConstants.USER_DETAIL.getKey(userId);
+        try {
+            userDetailMapper.updateAllByUserId(userDetail);
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            redisUtil.set(key, userDetail, 1440, TimeUnit.MINUTES);
+                        }
+                    }
+            );
+            logger.info("用户ID[{}]:更新信息成功,{}",userId,userDetail);
+        } catch (Exception e) {
+            logger.error("用户ID[{}]:更新信息失败", userId, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void setExp(Long userId, Long exp) {
+        try {
+            userDetailMapper.updateExpByUserId(userId, exp);
+            String key = RedisKeyConstants.USER_DETAIL.getKey(userId);
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            redisUtil.delete(key);
+                        }
+                    }
+            );
+            logger.info("用户ID[{}]:更新经验成功,设置为{}",userId,exp);
+        } catch (Exception e) {
+            logger.error("用户ID[{}]:更新经验失败", userId, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+
+    }
 }
