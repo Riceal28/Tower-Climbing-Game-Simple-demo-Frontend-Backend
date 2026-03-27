@@ -54,4 +54,15 @@ public interface UserDetailMapper {
     @Update("UPDATE user_detail SET current_hp=#{userDetail.currentHp}, current_mp=#{userDetail.currentMp} " +
             "WHERE user_id=#{userDetail.userId}")
     int updateHpMpByUserId(@Param("userDetail") UserDetail userDetail);
+    /**
+     * 根据userId更新血量、蓝量
+     */
+    @Update("UPDATE user_detail SET level=#{userDetail.level}, exp=#{userDetail.exp}, attack_base=#{userDetail.attackBase}, current_hp=#{userDetail.currentHp}, current_mp=#{userDetail.currentMp} " +
+            "WHERE user_id=#{userDetail.userId}")
+    int updateAllByUserId(@Param("userDetail") UserDetail userDetail);
+    /**
+     * 根据userId更新经验
+     */
+    @Update("UPDATE user_detail SET exp=#{exp} WHERE user_id=#{userId}")
+    int updateExpByUserId(@Param("userId") Long userId,@Param("exp") Long exp);
 }
