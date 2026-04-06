@@ -3,6 +3,7 @@ package com.szm.demo.service.Impl;
 import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
+import com.szm.demo.dto.PlayerShowResp;
 import com.szm.demo.entity.LevelInfo;
 import com.szm.demo.entity.UserDetail;
 import com.szm.demo.mapper.LevelInfoMapper;
@@ -77,6 +78,29 @@ public class PlayerServiceImpl implements PlayerService {
         }
     }
 
+    @Override//todo:待优化
+    public PlayerShowResp showPlayer(Long userId) {
+        if (userId == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        String key = RedisKeyConstants.PLAYER_SHOW.getKey(userId);
+        PlayerShowResp resp = redisUtil.get(key, PlayerShowResp.class);
+        if (resp == null) {
+            resp = new PlayerShowResp();
+            UserDetail userDetail = userService.getUserDetail(userId);
+            LevelInfo levelInfo = levelService.getLevelInfo(userDetail.getLevel());
+            resp.setLevel(userDetail.getLevel());
+            resp.setMaxHp(levelInfo.getMaxHp());
+            resp.setMaxMp(levelInfo.getMaxMp());
+            resp.setAttackBase(userDetail.getAttackBase());
+            resp.setExp(userDetail.getExp());
+            resp.setCurrentHp(userDetail.getCurrentHp());
+            resp.setCurrentMp(userDetail.getCurrentMp());
+            redisUtil.set(key,resp,30,TimeUnit.MINUTES);
+        }
+        return resp;
+    }
+
     @Override
     public void resetPlayer(Long userId) {
         LevelInfo levelInfo = levelService.getLevelInfo(1);
@@ -90,7 +114,7 @@ public class PlayerServiceImpl implements PlayerService {
         userService.setUserDetail(userDetail);
         String key = RedisKeyConstants.USER_DETAIL.getKey(userId);
         redisUtil.delete(key);
-        logger.warn("用户ID[{}]:重置了角色",userId);
+        logger.warn("用户ID[{}]:重置了角色", userId);
     }
 
     /**

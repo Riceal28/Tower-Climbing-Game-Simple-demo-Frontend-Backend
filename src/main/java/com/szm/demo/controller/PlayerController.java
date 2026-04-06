@@ -2,10 +2,15 @@ package com.szm.demo.controller;
 
 import com.szm.demo.common.ApiConstant;
 import com.szm.demo.common.Result;
+import com.szm.demo.dto.PlayerShowResp;
+import com.szm.demo.entity.LevelInfo;
+import com.szm.demo.entity.UserDetail;
+import com.szm.demo.service.LevelService;
 import com.szm.demo.service.PlayerService;
 import com.szm.demo.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,7 +22,16 @@ public class PlayerController {
     PlayerService playerService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private LevelService levelService;
 
+    @GetMapping("/show")
+    public Result<PlayerShowResp> showPlayer(HttpServletRequest request){
+        Long userId = Long.parseLong(request.getAttribute("userId").toString());
+        PlayerShowResp resp = new PlayerShowResp();
+        UserDetail userDetail = userService.getUserDetail(userId);
+        return Result.success(playerService.showPlayer(userId));
+    }
     @PostMapping("/create")
     public Result<String> createPlayer(HttpServletRequest request) {
         Long userId = Long.parseLong(request.getAttribute("userId").toString());
