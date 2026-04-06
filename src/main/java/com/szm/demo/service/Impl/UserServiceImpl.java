@@ -4,6 +4,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
+import com.szm.demo.dto.PlayerShowResp;
 import com.szm.demo.dto.UserLoginReq;
 import com.szm.demo.dto.UserRegisterReq;
 import com.szm.demo.entity.UserDetail;
@@ -104,7 +105,7 @@ public class UserServiceImpl implements UserService {
             userDetail = userDetailMapper.getByUserId(userId);
             if (userDetail == null) {
                 logger.error("用户信息不存在");
-                throw new BusinessException(ResultCode.NOT_FOUND, "用户信息不存在");
+                throw new BusinessException(ResultCode.NOT_FOUND, "角色不存在");
             }
             redisUtil.set(key, userDetail, 1440, TimeUnit.HOURS);
         }
