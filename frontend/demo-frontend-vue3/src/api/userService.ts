@@ -69,3 +69,13 @@ export const userService = {
     return api.post('/user/logout')
   },
 }
+
+export const playerService = {
+  getPlayerInfo(): Promise<ApiResponse> {
+    return api.get('/player/show')
+  },
+
+  createPlayer(): Promise<ApiResponse> {
+    return api.post('/player/create')
+  },
+}

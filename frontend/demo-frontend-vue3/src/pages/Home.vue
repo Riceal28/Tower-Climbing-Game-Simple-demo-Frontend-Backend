@@ -31,13 +31,20 @@ const handleLogout = async () => {
     router.push('/login')
   }
 }
+
+const goToPlayer = () => {
+  router.push('/player')
+}
 </script>
 
 <template>
   <div class="home-container">
     <div class="navbar">
       <h1>欢迎来到首页</h1>
-      <el-button @click="handleLogout">登出</el-button>
+      <div class="navbar-actions">
+        <el-button type="primary" @click="goToPlayer">角色信息</el-button>
+        <el-button @click="handleLogout">登出</el-button>
+      </div>
     </div>
     <div class="content">
       <p>这是首页</p>
@@ -64,6 +71,11 @@ const handleLogout = async () => {
   margin: 0;
   font-size: 24px;
   color: #333;
+}
+
+.navbar-actions {
+  display: flex;
+  gap: 10px;
 }
 
 .content {
