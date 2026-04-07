@@ -5,8 +5,10 @@ import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.dto.PlayerShowResp;
 import com.szm.demo.entity.LevelInfo;
+import com.szm.demo.entity.UserActionInfo;
 import com.szm.demo.entity.UserDetail;
 import com.szm.demo.mapper.LevelInfoMapper;
+import com.szm.demo.mapper.UserActionInfoMapper;
 import com.szm.demo.mapper.UserDetailMapper;
 import com.szm.demo.service.LevelService;
 import com.szm.demo.service.PlayerService;
@@ -21,6 +23,8 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -36,6 +40,9 @@ public class PlayerServiceImpl implements PlayerService {
 
     @Autowired
     LevelInfoMapper levelInfoMapper;
+
+    @Autowired
+    UserActionInfoMapper userActionInfoMapper;
 
     @Autowired
     LevelService levelService;
@@ -61,6 +68,20 @@ public class PlayerServiceImpl implements PlayerService {
             userDetail.setCreateTime(LocalDateTime.now());
             userDetail.setUpdateTime(LocalDateTime.now());
             userDetailMapper.insert(userDetail);
+
+            //创建角色技能组
+            List<UserActionInfo> userActionInfoList = new ArrayList<>();
+            for (long i = 1L; i <= 5; i++) {
+                UserActionInfo userActionInfo = new UserActionInfo();
+                userActionInfo.setUserId(userId);
+                userActionInfo.setActionId(i);
+                userActionInfo.setCurrentCd(0);
+                userActionInfo.setRestContinueRound(0);
+                userActionInfo.setCreateTime(LocalDateTime.now());
+                userActionInfo.setUpdateTime(LocalDateTime.now());
+                userActionInfoList.add(userActionInfo);
+            }
+            userActionInfoMapper.batchInsert(userActionInfoList);
 
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
@@ -96,7 +117,7 @@ public class PlayerServiceImpl implements PlayerService {
             resp.setExp(userDetail.getExp());
             resp.setCurrentHp(userDetail.getCurrentHp());
             resp.setCurrentMp(userDetail.getCurrentMp());
-            redisUtil.set(key,resp,30,TimeUnit.MINUTES);
+            redisUtil.set(key, resp, 30, TimeUnit.MINUTES);
         }
         return resp;
     }
