@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS save_info
     floor       INT UNSIGNED NOT NULL DEFAULT 1 COMMENT '所在层数',
     progress    INT      NOT NULL DEFAULT 0 COMMENT '层数进度',
     monster_id  BIGINT UNSIGNED NOT NULL COMMENT '当前对战的魔物ID',
-    is_active   TINYINT  NOT NULL DEFAULT 1 COMMENT '进程状态(可用或不可用)',
+    is_active   TINYINT  NOT NULL DEFAULT 0 COMMENT '激活状态(1激活或0未激活)',
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX       idx_user_id (user_id) COMMENT '用户ID索引'
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS save_info
   DEFAULT CHARSET = utf8mb4
   COMMENT = '游戏进程表';
 
--- 战斗信息表, 展示战斗中的信息
+-- 战斗信息表, 展示单场战斗中的信息
 CREATE TABLE IF NOT EXISTS battle_info
 (
     id                     BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID(战斗ID)',
@@ -155,6 +155,33 @@ CREATE TABLE IF NOT EXISTS monster_action_info
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COMMENT = '魔物行为关联表';
+
+-- 塔信息表, 存储各层战斗信息
+CREATE TABLE IF NOT EXISTS tower_floor_info
+(
+    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    floor               INT UNSIGNED UNIQUE NOT NULL COMMENT '层数',
+    progress_needed     INT UNSIGNED NOT NULL COMMENT '下一层所需进度',
+    create_time         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE = InnoDB
+    DEFAULT CHARSET = utf8mb4
+    COMMENT = '魔塔-楼层配置表';
+
+-- 层魔物关联表, 关联塔中每层的遇战信息
+CREATE TABLE IF NOT EXISTS tower_floor_monster_info
+(
+    id                  BIGINT  UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    floor               INT     UNSIGNED NOT NULL COMMENT '层数',
+    monster_id          BIGINT  UNSIGNED NOT NULL COMMENT '魔物ID',
+    battle_order        INT     UNSIGNED NOT NULL COMMENT '遇敌顺序',
+    reward_progress     INT      NOT NULL DEFAULT 0 COMMENT '击败后获得的层数进度(0-100)',
+    create_time         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY          uk_floor_monster_order (floor, monster_id, battle_order) COMMENT '楼层+怪物+顺序唯一索引，防止重复配置'
+) ENGINE = InnoDB
+    DEFAULT CHARSET = utf8mb4
+    COMMENT = '魔塔-楼层魔物配置表';
 
 -- 以下部分暂不开发
 -- DROP TABLE IF EXISTS item_info
