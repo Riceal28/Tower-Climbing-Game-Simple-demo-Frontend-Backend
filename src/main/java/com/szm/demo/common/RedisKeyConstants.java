@@ -16,7 +16,9 @@ public enum RedisKeyConstants {
     USER_TOKEN_IN("demo:user:token:%s","JTI"),
     USER_TOKEN_OUT("demo:user:token:blacklist:%s","JTI"),
     LEVEL_INFO("demo:level:%s","level"),
-    PLAYER_SHOW("demo:user:player:%s","userId");
+    PLAYER_SHOW("demo:user:player:%s","userId"),
+    SAVE_LIST("demo:save:list:%s","userId"),
+    SAVE_DETAIL("demo:save:%s:%s","userId, id");
 
     private final String key;
     private final String useBy;
