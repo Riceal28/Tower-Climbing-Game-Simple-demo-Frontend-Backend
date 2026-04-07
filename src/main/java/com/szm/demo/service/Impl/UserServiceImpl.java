@@ -4,7 +4,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
-import com.szm.demo.dto.PlayerShowResp;
 import com.szm.demo.dto.UserLoginReq;
 import com.szm.demo.dto.UserRegisterReq;
 import com.szm.demo.entity.UserDetail;

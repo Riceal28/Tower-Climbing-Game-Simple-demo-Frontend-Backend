@@ -6,7 +6,7 @@ public class SaveInfo {
     private Long id;
     private Long userId;
     private Integer level;
-    private Integer exp;
+    private Long exp;
     private Integer floor;
     private Integer progress;
     private Long monsterId;
@@ -41,11 +41,11 @@ public class SaveInfo {
         this.level = level;
     }
 
-    public Integer getExp() {
+    public Long getExp() {
         return exp;
     }
 
-    public void setExp(Integer exp) {
+    public void setExp(Long exp) {
         this.exp = exp;
     }
 

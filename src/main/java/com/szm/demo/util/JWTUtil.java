@@ -16,7 +16,7 @@ import java.util.Date;
 public class JWTUtil {
 
     private final String SECRET = "tower-climbing-demo";
-    private final Long EXPIRY_TIME = 30 * 60 * 1000L; // 30分钟
+    private final Long EXPIRY_TIME =24 * 60 * 60 * 1000L; // 24小时
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int JTI_LENGTH = 16; // 16字节 = 128位
 
