@@ -64,7 +64,7 @@ public class UserServiceImpl implements UserService {
                 || req.getPassword().isBlank()) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
-        //todo:redis登录限流
+        //todo:登录限流(redis或其他)
         UserInfo userInfo = userInfoMapper.getByUsername(req.getUsername());
         if (userInfo == null) {
             throw new BusinessException(ResultCode.USER_NOT_EXIST, "用户不存在");
