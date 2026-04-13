@@ -5,6 +5,7 @@ import com.szm.demo.common.Result;
 import com.szm.demo.dto.UserLoginReq;
 import com.szm.demo.dto.UserLoginResp;
 import com.szm.demo.dto.UserRegisterReq;
+import com.szm.demo.service.SaveService;
 import com.szm.demo.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,9 @@ public class UserController {
 
     @Autowired
     UserService userService;
+
+    @Autowired
+    SaveService saveService;
 
     @PostMapping("/register")
     public Result<String> register(@RequestBody UserRegisterReq req) {
