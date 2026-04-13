@@ -37,4 +37,18 @@ public class SaveController {
         SaveInfo saveInfo = saveService.getSaveById(userId,id);
         return Result.success(saveInfo);
     }
+
+    @PostMapping("/active/{id}")
+    public Result<String> playOneSave(@PathVariable Long id,HttpServletRequest request){
+        Long userId = Long.parseLong(request.getAttribute("userId").toString());
+        saveService.setSaveActive(userId,id);
+        return Result.success("激活存档成功");
+    }
+
+    @GetMapping("/showactive")
+    public Result<SaveInfo> getActiveSave(HttpServletRequest request){
+        Long userId = Long.parseLong(request.getAttribute("userId").toString());
+        SaveInfo saveInfo = saveService.getActiveSave(userId);
+        return Result.success(saveInfo);
+    }
 }
