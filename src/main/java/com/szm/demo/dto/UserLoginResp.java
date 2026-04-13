@@ -2,7 +2,7 @@ package com.szm.demo.dto;
 
 public class UserLoginResp {
     private String token;
-
+    
     public UserLoginResp() {
     }
 
