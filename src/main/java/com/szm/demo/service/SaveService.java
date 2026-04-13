@@ -9,8 +9,8 @@ public interface SaveService {
     void createDefaultSave(Long userId);
     List<SaveInfo> getSaveByUserId(Long userId);
     SaveInfo getSaveById(Long userId, Long id);
+    void clearAllActiveSave(Long userId);
     void setSaveActive(Long userId, Long id);
-    void getActiveSave(Long userId);
-    void updateSave(SaveInfo saveInfo);
-
+    SaveInfo getActiveSave(Long userId);
+    void updateSave(SaveInfo saveInfo,Long userId);
 }

@@ -35,11 +35,15 @@ public class SaveServiceImpl implements SaveService {
     UserService userService;
 
     @Autowired
-    UserDetailMapper userDetailMapper;
-
-    @Autowired
     SaveInfoMapper saveInfoMapper;
 
+    /**
+     * 创建默认存档
+     * UserDetail -> SaveInfo -> [INSERT]
+     * {SAVE_DETAIL -> hashPutAll, SAVE_LIST -> setAdd}
+     *
+     * @param userId 用户ID
+     */
     @Override
     @Transactional
     public void createDefaultSave(Long userId) {
@@ -75,6 +79,15 @@ public class SaveServiceImpl implements SaveService {
         }
     }
 
+    /**
+     * 根据用户ID获取SaveInfo列表
+     * {SAVE_LIST -> setMembers, SAVE_DETAIL -> hashEntries} ->
+     * IF Empty -> [SELECT] -> List-SaveInfo ->
+     * {SAVE_LIST -> setAdd, SAVE_DETAIL -> hashPutAll}
+     *
+     * @param userId 用户ID
+     * @return List-SaveInfo
+     */
     @Override//todo:设置过期时间
     public List<SaveInfo> getSaveByUserId(Long userId) {
         if (userId == null) {
@@ -108,11 +121,23 @@ public class SaveServiceImpl implements SaveService {
             redisUtil.setAdd(key3, id);
             String detailKey = RedisKeyConstants.SAVE_DETAIL.getKey(userId, id);
             Map<String, Object> map = saveInfoToMap(saveInfo);
-            redisUtil.hashPutAll(detailKey, map);
+            if (!redisUtil.hasKey(detailKey)) {
+                redisUtil.hashPutAll(detailKey, map);
+            }
         }
         return saveInfoList;
     }
 
+    /**
+     * 根据用户ID,存档ID获取指定存档
+     * {SAVE_DETAIL -> hashEntries} ->
+     * IF EMPTY -> [SELECT] -> SaveInfo ->
+     * {SAVE_DETAIL -> hashPutAll, SAVE_LIST -> setAdd}
+     *
+     * @param userId 用户ID
+     * @param id     存档ID
+     * @return SaveInfo
+     */
     @Override//todo:设置过期时间
     public SaveInfo getSaveById(Long userId, Long id) {
         if (id == null || userId == null) {
@@ -128,17 +153,26 @@ public class SaveServiceImpl implements SaveService {
         }
         SaveInfo saveInfo = saveInfoMapper.getById(id);
         if (saveInfo == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND,"未找到存档信息");
+            throw new BusinessException(ResultCode.NOT_FOUND, "未找到存档信息");
         }
         Map<String, Object> map2 = saveInfoToMap(saveInfo);
         redisUtil.hashPutAll(key, map2);
+        String key3 = RedisKeyConstants.SAVE_LIST.getKey(userId);
+        redisUtil.setAdd(key3, id);
         return saveInfo;
     }
 
+    /**
+     * 更新存档
+     * SaveInfo -> [UPDATE] ->
+     * {SAVE_LIST -> setAdd, SAVE_DETAIL -> hashPutAll}
+     *
+     * @param saveInfo 修改后的存档
+     */
     @Override
     @Transactional//todo:设置过期时间
-    public void updateSave(SaveInfo saveInfo) {
-        if (saveInfo == null) {
+    public void updateSave(SaveInfo saveInfo, Long userId) {
+        if (saveInfo == null || userId == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
         try {
@@ -147,10 +181,12 @@ public class SaveServiceImpl implements SaveService {
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            String key = RedisKeyConstants.
+                            String key = RedisKeyConstants.SAVE_LIST.getKey(userId);
+                            redisUtil.setAdd(key, saveInfo.getId());
+                            String key2 = RedisKeyConstants.
                                     SAVE_DETAIL.getKey(saveInfo.getUserId(), saveInfo.getId());
                             Map<String, Object> map = saveInfoToMap(saveInfo);
-                            redisUtil.hashPutAll(key,map);
+                            redisUtil.hashPutAll(key2, map);
                         }
                     }
             );
@@ -159,17 +195,120 @@ public class SaveServiceImpl implements SaveService {
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
     }
-    @Override
-    @Transactional
-    public void setSaveActive(Long userId, Long id) {
-        SaveInfo saveInfo = getSaveById(userId,id);
-        //todo:调用mapper方法,清除所有激活的save
-        saveInfo.setIsActive(true);
-        updateSave(saveInfo);
-    }
 
     @Override
-    public void getActiveSave(Long userId) {
+    @Transactional//todo:设置过期时间
+    public void clearAllActiveSave(Long userId) {
+        if (userId == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        try {
+            saveInfoMapper.clearActiveByUserId(userId);
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            String key = RedisKeyConstants.SAVE_LIST.getKey(userId);
+                            Set<String> saveIdSet = redisUtil.setMembers(key, String.class);
+                            // 遍历清除激活状态
+                            for (String sid : saveIdSet) {
+                                String key2 = RedisKeyConstants.SAVE_DETAIL.getKey(userId, sid);
+                                redisUtil.hashPut(key2, "isActive", false);
+                            }
+                        }
+                    }
+            );
+        } catch (Exception e) {
+            logger.error("用户ID[{}]:关闭所有存档失败", userId, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+    }
+
+    /**
+     * 根据用户ID,存档ID激活指定存档
+     * [UPDATE ALL] -> SaveInfo.isActive.flase ->
+     * getSaveById -> SaveInfo.isActive.true -> [UPDATE] ->
+     * {SAVE_LIST -> setAdd setMembers, SAVE_DETAIL -> hashPut[setM](false) hashPut(true)}
+     *
+     * @param userId 用户ID
+     * @param id     存档ID
+     */
+    @Override
+    @Transactional//todo:设置过期时间
+    public void setSaveActive(Long userId, Long id) {
+        if (userId == null || id == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        SaveInfo saveInfo = getSaveById(userId, id);
+        try {
+            saveInfoMapper.clearActiveByUserId(userId);
+            saveInfo.setIsActive(true);
+            updateSave(saveInfo, userId);
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            // 先更新存档ID集
+                            String key = RedisKeyConstants.SAVE_LIST.getKey(userId);
+                            redisUtil.setAdd(key, id);
+                            Set<String> saveIdSet = redisUtil.setMembers(key, String.class);
+                            // 遍历清除激活状态
+                            for (String sid : saveIdSet) {
+                                String key2 = RedisKeyConstants.SAVE_DETAIL.getKey(userId, sid);
+                                redisUtil.hashPut(key2, "isActive", false);
+                            }
+                            // 单独激活所选存档
+                            String key3 = RedisKeyConstants.SAVE_DETAIL.getKey(userId, id);
+                            redisUtil.hashPut(key3, "isActive", true);
+                        }
+                    }
+            );
+        } catch (Exception e) {
+            logger.error("用户ID[{}]:激活存档ID[{}]失败", userId, id, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+    }
+
+    /**
+     * 根据用户ID查询激活的存档
+     *
+     * @param userId 用户ID
+     * @return SaveInfo
+     */
+    @Override//todo:设置过期时间
+    public SaveInfo getActiveSave(Long userId) {
+        if (userId == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        try {
+            String key = RedisKeyConstants.SAVE_LIST.getKey(userId);
+            Set<String> saveIdSet = redisUtil.setMembers(key, String.class);
+            if (!saveIdSet.isEmpty()) {
+                for (String sid : saveIdSet) {
+                    String detailKey = RedisKeyConstants.SAVE_DETAIL.getKey(userId, sid);
+                    Boolean result = redisUtil.hashGet(detailKey, "isActive", Boolean.class);
+                    if (result == false) {
+                        continue;
+                    }
+                    Map<String, Object> map = redisUtil.hashEntries(detailKey, Object.class);
+                    return mapToSaveInfo(map);
+                }
+            }
+            SaveInfo saveInfo = saveInfoMapper.getActiveSave(userId);
+            if (saveInfo == null) {
+                throw new BusinessException(ResultCode.NOT_FOUND, "未找到已激活的存档");
+            }
+            String key2 = RedisKeyConstants.SAVE_LIST.getKey(userId);
+            redisUtil.setAdd(key2, saveInfo.getId());
+            String key3 = RedisKeyConstants.SAVE_DETAIL.getKey(userId, saveInfo.getId());
+            if (!redisUtil.hasKey(key3)) {
+                redisUtil.hashPutAll(key3, saveInfoToMap(saveInfo));
+            }
+            return saveInfo;
+        } catch (Exception e) {
+            logger.error("用户ID[{}]:获取已激活存档失败", userId, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
 
     }
 
