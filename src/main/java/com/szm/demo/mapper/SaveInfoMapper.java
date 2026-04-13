@@ -24,6 +24,9 @@ public interface SaveInfoMapper {
             "WHERE id=#{saveInfo.id}")
     int updateSaveById(@Param("saveInfo")SaveInfo saveInfo);
 
-    @Update("UPDATE save_info")
+    @Update("UPDATE save_info SET is_active = 0 WHERE user_id = #{userId}")
     int clearActiveByUserId(@Param("userId")Long userId);
+
+    @Select("SELECT * FROM save_info WHERE user_id = #{userId} AND is_active = 1")
+    SaveInfo getActiveSave(@Param("userId")Long userId);
 }
