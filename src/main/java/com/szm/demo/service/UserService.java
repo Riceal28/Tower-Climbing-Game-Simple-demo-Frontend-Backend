@@ -2,13 +2,13 @@ package com.szm.demo.service;
 
 import com.szm.demo.dto.UserLoginReq;
 import com.szm.demo.dto.UserRegisterReq;
-import com.szm.demo.entity.UserDetail;
+import com.szm.demo.entity.UserPlayerInfo;
 
 public interface UserService {
     void register(UserRegisterReq req);
     String login(UserLoginReq req);
     void logout(String token);
-    UserDetail getUserDetail(Long userId);
-    void setUserDetail(UserDetail userDetail);
+    UserPlayerInfo getPlayerInfo(Long playerId);
+    void setPlayerInfo(UserPlayerInfo userPlayerInfo);
     void setExp(Long userId, Long exp);
 }

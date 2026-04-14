@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public class MonsterActionInfo {
     private Long id;
+    private Long battleId;
     private Long monsterId;
     private Long actionId;
     private Integer currentCd;
@@ -20,6 +21,14 @@ public class MonsterActionInfo {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getBattleId() {
+        return battleId;
+    }
+
+    public void setBattleId(Long battleId) {
+        this.battleId = battleId;
     }
 
     public Long getMonsterId() {
@@ -72,7 +81,7 @@ public class MonsterActionInfo {
 
     @Override
     public String toString() {
-        return String.format("MonsterActionInfo[id=%s, monsterId=%s, actionId=%s, currentCd=%s, restContinueRound=%s, createTime=%s, updateTime=%s]",
-                getId(), getMonsterId(), getActionId(), getCurrentCd(), getRestContinueRound(), getCreateTime(), getUpdateTime());
+        return String.format("MonsterActionInfo[id=%s, battleId=%s, monsterId=%s, actionId=%s, currentCd=%s, restContinueRound=%s, createTime=%s, updateTime=%s]",
+                getId(), getBattleId(), getMonsterId(), getActionId(), getCurrentCd(), getRestContinueRound(), getCreateTime(), getUpdateTime());
     }
 }

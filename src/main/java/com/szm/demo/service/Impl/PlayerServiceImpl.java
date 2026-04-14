@@ -1,15 +1,16 @@
 package com.szm.demo.service.Impl;
 
 import com.szm.demo.common.BusinessException;
+import com.szm.demo.common.PlayerClass;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.dto.PlayerShowResp;
 import com.szm.demo.entity.LevelInfo;
 import com.szm.demo.entity.UserActionInfo;
-import com.szm.demo.entity.UserDetail;
+import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.mapper.LevelInfoMapper;
 import com.szm.demo.mapper.UserActionInfoMapper;
-import com.szm.demo.mapper.UserDetailMapper;
+import com.szm.demo.mapper.UserPlayerInfoMapper;
 import com.szm.demo.service.LevelService;
 import com.szm.demo.service.PlayerService;
 import com.szm.demo.service.UserService;
@@ -36,7 +37,7 @@ public class PlayerServiceImpl implements PlayerService {
     RedisUtil redisUtil;
 
     @Autowired
-    UserDetailMapper userDetailMapper;
+    UserPlayerInfoMapper userPlayerInfoMapper;
 
     @Autowired
     LevelInfoMapper levelInfoMapper;
@@ -52,27 +53,23 @@ public class PlayerServiceImpl implements PlayerService {
 
     @Override
     @Transactional//抛出异常自动回滚
-    public void createDefaultPlayer(Long userId) {
-        if (userDetailMapper.getByUserId(userId) != null) {
-            throw new BusinessException(ResultCode.DATA_DUPLICATE, "已拥有角色");
-        }
+    public void createPlayer(Long userId, PlayerClass playerClass) {
         try {
             LevelInfo levelInfo = levelInfoMapper.getByLevel(1);
-            UserDetail userDetail = new UserDetail();
-            userDetail.setUserId(userId);
-            userDetail.setLevel(levelInfo.getLevel());
-            userDetail.setExp(0L);
-            userDetail.setCurrentHp(levelInfo.getMaxHp());
-            userDetail.setCurrentMp(levelInfo.getMaxMp());
-            userDetail.setAttackBase(levelInfo.getAttackBase());
-            userDetail.setCreateTime(LocalDateTime.now());
-            userDetail.setUpdateTime(LocalDateTime.now());
-            userDetailMapper.insert(userDetail);
+            UserPlayerInfo userPlayerInfo = new UserPlayerInfo();
+            userPlayerInfo.setUserId(userId);
+            userPlayerInfo.setPlayerClass(playerClass);
+            userPlayerInfo.setLevel(levelInfo.getLevel());
+            userPlayerInfo.setExp(0L);
+            userPlayerInfo.setCreateTime(LocalDateTime.now());
+            userPlayerInfo.setUpdateTime(LocalDateTime.now());
+            userPlayerInfoMapper.insert(userPlayerInfo);
 
-            //创建角色技能组
+            //创建角色技能组//todo:技能组相关方法解耦
             List<UserActionInfo> userActionInfoList = new ArrayList<>();
             for (long i = 1L; i <= 5; i++) {
                 UserActionInfo userActionInfo = new UserActionInfo();
+                userActionInfo.setBattleId(0L);
                 userActionInfo.setUserId(userId);
                 userActionInfo.setActionId(i);
                 userActionInfo.setCurrentCd(0);
@@ -87,8 +84,8 @@ public class PlayerServiceImpl implements PlayerService {
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            String key = RedisKeyConstants.USER_DETAIL.getKey(userId);
-                            redisUtil.set(key, userDetail, 1440, TimeUnit.MINUTES);
+                            String key = RedisKeyConstants.USER_DETAIL.getKey(userId);//todo:redis修订
+                            redisUtil.set(key, userPlayerInfo, 1440, TimeUnit.MINUTES);
                         }
                     }
             );
@@ -108,15 +105,14 @@ public class PlayerServiceImpl implements PlayerService {
         PlayerShowResp resp = redisUtil.get(key, PlayerShowResp.class);
         if (resp == null) {
             resp = new PlayerShowResp();
-            UserDetail userDetail = userService.getUserDetail(userId);
-            LevelInfo levelInfo = levelService.getLevelInfo(userDetail.getLevel());
-            resp.setLevel(userDetail.getLevel());
+            UserPlayerInfo userPlayerInfo = userService.getPlayerInfo(userId);
+            LevelInfo levelInfo = levelService.getLevelInfo(userPlayerInfo.getLevel());
+            resp.setPlayerClass(userPlayerInfo.getPlayerClass());
+            resp.setLevel(userPlayerInfo.getLevel());
             resp.setMaxHp(levelInfo.getMaxHp());
             resp.setMaxMp(levelInfo.getMaxMp());
-            resp.setAttackBase(userDetail.getAttackBase());
-            resp.setExp(userDetail.getExp());
-            resp.setCurrentHp(userDetail.getCurrentHp());
-            resp.setCurrentMp(userDetail.getCurrentMp());
+            resp.setAttackBase(levelInfo.getAttackBase());
+            resp.setExp(userPlayerInfo.getExp());
             redisUtil.set(key, resp, 30, TimeUnit.MINUTES);
         }
         return resp;
@@ -125,15 +121,12 @@ public class PlayerServiceImpl implements PlayerService {
     @Override
     public void resetPlayer(Long userId) {
         LevelInfo levelInfo = levelService.getLevelInfo(1);
-        UserDetail userDetail = userService.getUserDetail(userId);
-        userDetail.setExp(0L);
-        userDetail.setLevel(levelInfo.getLevel());
-        userDetail.setAttackBase(levelInfo.getAttackBase());
-        userDetail.setCurrentHp(levelInfo.getMaxHp());
-        userDetail.setCurrentMp(levelInfo.getMaxHp());
-        userDetail.setUpdateTime(LocalDateTime.now());
-        userService.setUserDetail(userDetail);
-        String key = RedisKeyConstants.USER_DETAIL.getKey(userId);
+        UserPlayerInfo userPlayerInfo = userService.getPlayerInfo(userId);
+        userPlayerInfo.setExp(0L);
+        userPlayerInfo.setLevel(levelInfo.getLevel());
+        userPlayerInfo.setUpdateTime(LocalDateTime.now());
+        userService.setPlayerInfo(userPlayerInfo);
+        String key = RedisKeyConstants.USER_DETAIL.getKey(userId);//todo:修订redis
         redisUtil.delete(key);
         logger.warn("用户ID[{}]:重置了角色", userId);
     }
@@ -141,37 +134,37 @@ public class PlayerServiceImpl implements PlayerService {
     /**
      * 检测经验溢出情况
      *
-     * @param userId 用户ID
+     * @param playerId 角色ID
      * @return 当前经验-所需经验(大于零为溢出的经验,小于零为欠缺的经验)
      */
     @Override
-    public Long checkOverflowExp(Long userId) {
-        UserDetail userDetail = userService.getUserDetail(userId);
-        long currentExp = userDetail.getExp();
-        int currentLevel = userDetail.getLevel();
+    public Long checkOverflowExp(Long playerId) {
+        UserPlayerInfo userPlayerInfo = userService.getPlayerInfo(playerId);
+        long currentExp = userPlayerInfo.getExp();
+        int currentLevel = userPlayerInfo.getLevel();
         LevelInfo levelInfo = levelService.getLevelInfo(currentLevel);
-        logger.info("用户ID[{}]:检测当前经验:{}, 升级所需经验:{}", userId, currentExp, levelInfo.getNeededExp());
+        logger.info("用户ID[{}]:检测当前经验:{}, 升级所需经验:{}", playerId, currentExp, levelInfo.getNeededExp());
         return currentExp - levelInfo.getNeededExp();
     }
 
 
     @Override
     // 排坑: 这里不能加事务,否则因为事务传播, 同一个事务内反复读，永远读到的是旧数据
-    public void tryLevelUp(Long userId) {
+    public void tryLevelUp(Long playerId) {
         long startTime = System.currentTimeMillis();
-        logger.info("用户ID[{}]:尝试进行升级:开始", userId);
-        if (userId == null) {
+        logger.info("角色ID[{}]:尝试进行升级:开始", playerId);
+        if (playerId == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
-        Long extraExp = checkOverflowExp(userId);
+        Long extraExp = checkOverflowExp(playerId);
         if (extraExp < 0) {
             return;
         }
         while (extraExp >= 0) {
-            levelService.levelUp(userId, extraExp);
-            extraExp = checkOverflowExp(userId);
-            logger.info("用户ID[{}]:尝试进行升级:----当前多余经验:{}", userId, extraExp);
+            levelService.levelUp(playerId, extraExp);
+            extraExp = checkOverflowExp(playerId);
+            logger.info("角色ID[{}]:尝试进行升级:----当前多余经验:{}", playerId, extraExp);
         }
-        logger.info("用户ID[{}]:尝试进行升级:结束，总耗时={}ms", userId, System.currentTimeMillis() - startTime);
+        logger.info("角色ID[{}]:尝试进行升级:结束，总耗时={}ms", playerId, System.currentTimeMillis() - startTime);
     }
 }

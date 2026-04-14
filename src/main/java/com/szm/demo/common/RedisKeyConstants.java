@@ -17,8 +17,12 @@ public enum RedisKeyConstants {
     USER_TOKEN_OUT("demo:user:token:blacklist:%s","JTI"),
     LEVEL_INFO("demo:level:%s","level"),
     PLAYER_SHOW("demo:user:player:%s","userId"),
-    SAVE_LIST("demo:save:list:%s","userId"),
-    SAVE_DETAIL("demo:save:%s:%s","userId, id");
+    SAVE_LIST("demo:save:list:%s","userId(存存档ID)"),
+    SAVE_DETAIL("demo:save:%s:%s","userId, id"),
+    TOWER_BASE("demo:tower:base:%s","floor"),
+    TOWER_LIST("demo:tower:list:%s","floor(存order)"),
+    TOWER_DETAIL("demo:tower:%s:%s","floor, order"),
+    MONSTER_INFO("demo:monster:info:%s","monsterId");
 
     private final String key;
     private final String useBy;

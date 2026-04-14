@@ -4,9 +4,8 @@ import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.entity.SaveInfo;
-import com.szm.demo.entity.UserDetail;
+import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.mapper.SaveInfoMapper;
-import com.szm.demo.mapper.UserDetailMapper;
 import com.szm.demo.service.SaveService;
 import com.szm.demo.service.UserService;
 import com.szm.demo.util.RedisUtil;
@@ -42,19 +41,21 @@ public class SaveServiceImpl implements SaveService {
      * UserDetail -> SaveInfo -> [INSERT]
      * {SAVE_DETAIL -> hashPutAll, SAVE_LIST -> setAdd}
      *
-     * @param userId 用户ID
+     * @param playerId 角色ID
      */
     @Override
     @Transactional
-    public void createDefaultSave(Long userId) {
+    public void createDefaultSave(Long playerId) {//todo:等待存档表修订
         try {
             SaveInfo saveInfo = new SaveInfo();
-            UserDetail userDetail = userService.getUserDetail(userId);
-            saveInfo.setUserId(userId);
-            saveInfo.setLevel(userDetail.getLevel());
-            saveInfo.setExp(userDetail.getExp());
+            UserPlayerInfo userPlayerInfo = userService.getPlayerInfo(playerId);
+            saveInfo.setUserId(userId);//创建初始角色-使用角色创建存档-存档-角色信息界面
+            saveInfo.setLevel(userPlayerInfo.getLevel());
+            saveInfo.setExp(userPlayerInfo.getExp());
+            saveInfo.setCurrentHp(userPlayerInfo.getCurrentHp());
+            saveInfo.setCurrentMp(userPlayerInfo.getCurrentMp());
             saveInfo.setFloor(1);
-            saveInfo.setMonsterId(0L);
+            saveInfo.setBattleOrder(0);
             saveInfo.setIsActive(false);
             saveInfo.setProgress(0);
             saveInfo.setCreateTime(LocalDateTime.now());
@@ -89,6 +90,7 @@ public class SaveServiceImpl implements SaveService {
      * @return List-SaveInfo
      */
     @Override//todo:设置过期时间
+    //todo:try包围
     public List<SaveInfo> getSaveByUserId(Long userId) {
         if (userId == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
@@ -114,6 +116,9 @@ public class SaveServiceImpl implements SaveService {
             return saveInfoList;
         }
         saveInfoList = saveInfoMapper.getByUserId(userId);
+        if (saveInfoList.isEmpty()) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "当前无可用存档");
+        }
 
         for (SaveInfo saveInfo : saveInfoList) {
             Long id = saveInfo.getId();
@@ -305,11 +310,12 @@ public class SaveServiceImpl implements SaveService {
                 redisUtil.hashPutAll(key3, saveInfoToMap(saveInfo));
             }
             return saveInfo;
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("用户ID[{}]:获取已激活存档失败", userId, e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
-
     }
 
     private SaveInfo mapToSaveInfo(Map<String, Object> map) {
@@ -318,9 +324,11 @@ public class SaveServiceImpl implements SaveService {
         saveInfo.setUserId(((Number) map.get("userId")).longValue());
         saveInfo.setLevel(((Number) map.get("level")).intValue());
         saveInfo.setExp(((Number) map.get("exp")).longValue());
+        saveInfo.setCurrentHp(((Number) map.get("currentHp")).intValue());
+        saveInfo.setCurrentMp(((Number) map.get("currentMp")).intValue());
         saveInfo.setFloor(((Number) map.get("floor")).intValue());
         saveInfo.setProgress(((Number) map.get("progress")).intValue());
-        saveInfo.setMonsterId(((Number) map.get("monsterId")).longValue());
+        saveInfo.setBattleOrder(((Number) map.get("battleOrder")).intValue());
         saveInfo.setIsActive((Boolean) map.get("isActive"));
         saveInfo.setCreateTime((LocalDateTime) map.get("createTime"));
         saveInfo.setUpdateTime((LocalDateTime) map.get("updateTime"));
@@ -333,9 +341,11 @@ public class SaveServiceImpl implements SaveService {
         map.put("userId", saveInfo.getUserId());
         map.put("level", saveInfo.getLevel());
         map.put("exp", saveInfo.getExp());
+        map.put("currentHp", saveInfo.getCurrentHp());
+        map.put("currentMp", saveInfo.getCurrentMp());
         map.put("floor", saveInfo.getFloor());
+        map.put("battleOrder",saveInfo.getBattleOrder());
         map.put("progress", saveInfo.getProgress());
-        map.put("monsterId", saveInfo.getMonsterId());
         map.put("isActive", saveInfo.getIsActive());
         map.put("createTime", saveInfo.getCreateTime());
         map.put("updateTime", saveInfo.getUpdateTime());

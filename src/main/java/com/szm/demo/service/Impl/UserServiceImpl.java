@@ -6,9 +6,9 @@ import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.dto.UserLoginReq;
 import com.szm.demo.dto.UserRegisterReq;
-import com.szm.demo.entity.UserDetail;
+import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.entity.UserInfo;
-import com.szm.demo.mapper.UserDetailMapper;
+import com.szm.demo.mapper.UserPlayerInfoMapper;
 import com.szm.demo.mapper.UserInfoMapper;
 import com.szm.demo.service.UserService;
 import com.szm.demo.util.RedisUtil;
@@ -39,7 +39,7 @@ public class UserServiceImpl implements UserService {
     UserInfoMapper userInfoMapper;
 
     @Autowired
-    UserDetailMapper userDetailMapper;
+    UserPlayerInfoMapper userPlayerInfoMapper;
 
     @Override
     public void register(UserRegisterReq req) {
@@ -93,47 +93,47 @@ public class UserServiceImpl implements UserService {
         logger.info("User: {} 登出成功, token:{}", jwt.getClaim("username"), token);
     }
 
-    @Override
-    public UserDetail getUserDetail(Long userId) {
-        if (userId == null) {
+    @Override//todo:try包围
+    public UserPlayerInfo getPlayerInfo(Long playerId) {
+        if (playerId == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
-        String key = RedisKeyConstants.USER_DETAIL.getKey(userId);
-        UserDetail userDetail = redisUtil.get(key, UserDetail.class);
-        if (userDetail == null) {
-            userDetail = userDetailMapper.getByUserId(userId);
-            if (userDetail == null) {
-                logger.error("用户信息不存在");
+        String key = RedisKeyConstants.USER_DETAIL.getKey(userId);//todo:修订redis部分
+        UserPlayerInfo userPlayerInfo = redisUtil.get(key, UserPlayerInfo.class);
+        if (userPlayerInfo == null) {
+            userPlayerInfo = userPlayerInfoMapper.getById(playerId);
+            if (userPlayerInfo == null) {
+                logger.error("用户角色信息不存在");
                 throw new BusinessException(ResultCode.NOT_FOUND, "角色不存在");
             }
-            redisUtil.set(key, userDetail, 1440, TimeUnit.HOURS);
+            redisUtil.set(key, userPlayerInfo, 1440, TimeUnit.HOURS);
         }
-        logger.info("查询了一次用户详情");
-        return userDetail;
+        logger.info("查询了一次用户角色详情");
+        return userPlayerInfo;
     }
 
     @Override
     @Transactional
-    public void setUserDetail(UserDetail userDetail) {
-        if (userDetail == null) {
+    public void setPlayerInfo(UserPlayerInfo userPlayerInfo) {
+        if (userPlayerInfo == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
-        if (userDetail.getUserId() == null) {
+        if (userPlayerInfo.getUserId() == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
-        Long userId = userDetail.getUserId();
-        String key = RedisKeyConstants.USER_DETAIL.getKey(userId);
+        Long userId = userPlayerInfo.getUserId();
+        String key = RedisKeyConstants.USER_DETAIL.getKey(userId);//todo:修订redis部分
         try {
-            userDetailMapper.updateAllByUserId(userDetail);
+            userPlayerInfoMapper.updateAllById(userPlayerInfo);
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            redisUtil.set(key, userDetail, 1440, TimeUnit.MINUTES);
+                            redisUtil.set(key, userPlayerInfo, 1440, TimeUnit.MINUTES);
                         }
                     }
             );
-            logger.info("用户ID[{}]:更新信息成功,{}",userId,userDetail);
+            logger.info("用户ID[{}]:更新信息成功,{}",userId, userPlayerInfo);
         } catch (Exception e) {
             logger.error("用户ID[{}]:更新信息失败", userId, e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
@@ -142,10 +142,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void setExp(Long userId, Long exp) {
+    public void setExp(Long playerId, Long exp) {
         try {
-            userDetailMapper.updateExpByUserId(userId, exp);
-            String key = RedisKeyConstants.USER_DETAIL.getKey(userId);
+            userPlayerInfoMapper.updateExpById(playerId, exp);
+            String key = RedisKeyConstants.USER_DETAIL.getKey(userId);//todo:修订redis部分
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
                         @Override
@@ -154,9 +154,9 @@ public class UserServiceImpl implements UserService {
                         }
                     }
             );
-            logger.info("用户ID[{}]:更新经验成功,设置为{}",userId,exp);
+            logger.info("角色ID[{}]:更新经验成功,设置为{}",playerId,exp);
         } catch (Exception e) {
-            logger.error("用户ID[{}]:更新经验失败", userId, e);
+            logger.error("角色ID[{}]:更新经验失败", playerId, e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
 

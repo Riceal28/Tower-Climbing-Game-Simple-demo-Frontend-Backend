@@ -11,16 +11,21 @@ public interface SaveInfoMapper {
     @Select("SELECT * FROM save_info WHERE id = #{id}")
     SaveInfo getById(@Param("id") Long id);
 
-    @Select("SELECT * FROM save_info WHERE user_id = #{userId}")
+    @Select("SELECT * FROM save_info WHERE user_id = #{userId}")//todo:修改为分页查询
     List<SaveInfo> getByUserId(@Param("userId") Long userId);
 
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
-    @Insert("INSERT INTO save_info (user_id, level, exp, floor, progress, monster_id, is_active) " +
-            "VALUES (#{saveInfo.userId},#{saveInfo.level},#{saveInfo.exp},#{saveInfo.floor},#{saveInfo.progress},#{saveInfo.monsterId},#{saveInfo.isActive})")
+    @Insert("INSERT INTO save_info (user_id, player_id, level, exp, current_hp, current_mp, " +
+            "floor, battle_order, progress, is_active) " +
+            "VALUES (#{saveInfo.userId},#{saveInfo.playerId},#{saveInfo.level},#{saveInfo.exp}," +
+            "#{saveInfo.currentHp},#{saveInfo.currentMp},#{saveInfo.floor}," +
+            "#{saveInfo.battleOrder},#{saveInfo.progress},#{saveInfo.isActive})")
     SaveInfo insert(@Param("saveInfo")SaveInfo saveInfo);
 
-    @Update("UPDATE save_info SET level=#{saveInfo.level},exp=#{saveInfo.exp},floor=#{saveInfo.floor}," +
-            "progress=#{saveInfo.progress},monster_id=#{saveInfo.monsterId},is_active=#{saveInfo.isActivate} " +
+    @Update("UPDATE save_info SET level=#{saveInfo.level},exp=#{saveInfo.exp}," +
+            "current_hp=#{saveInfo.currentHp},current_mp=#{saveInfo.currentMp},floor=#{saveInfo.floor}," +
+            "battle_order=#{saveInfo.battleOrder},progress=#{saveInfo.progress}," +
+            "is_active=#{saveInfo.isActivate} " +
             "WHERE id=#{saveInfo.id}")
     int updateSaveById(@Param("saveInfo")SaveInfo saveInfo);
 

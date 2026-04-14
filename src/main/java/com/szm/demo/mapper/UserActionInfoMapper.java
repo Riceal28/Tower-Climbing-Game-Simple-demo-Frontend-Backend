@@ -12,16 +12,17 @@ public interface UserActionInfoMapper {
     List<UserActionInfo> getByUserId(@Param("userId")Long userId);
 
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
-    @Insert("INSERT INTO user_action_info (user_id, action_id, current_cd, rest_continue_round) " +
-            "VALUES (#{userActionInfo.userId},#{userActionInfo.actionId},#{userActionInfo.currentCd},#{userActionInfo.restContinueRound})")
+    @Insert("INSERT INTO user_action_info (battle_id, user_id, action_id, current_cd, rest_continue_round) " +
+            "VALUES (#{userActionInfo.battleId},#{userActionInfo.userId},#{userActionInfo.actionId}," +
+            "#{userActionInfo.currentCd},#{userActionInfo.restContinueRound})")
     void insert(@Param("userActionInfo")UserActionInfo userActionInfo);
 
     @Insert({
             "<script>",
-            "INSERT INTO user_action_info (user_id, action_id, current_cd, rest_continue_round) ",
+            "INSERT INTO user_action_info (battle_id, user_id, action_id, current_cd, rest_continue_round) ",
             "VALUES ",
             "<foreach collection='userActionInfoList' item='item' separator=','>",
-            "(#{item.userId}, #{item.actionId}, #{item.currentCd}, #{item.restContinueRound})",
+            "(#{item.battleId}, #{item.userId}, #{item.actionId}, #{item.currentCd}, #{item.restContinueRound})",
             "</foreach>",
             "</script>"
     })

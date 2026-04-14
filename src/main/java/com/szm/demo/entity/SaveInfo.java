@@ -5,11 +5,14 @@ import java.time.LocalDateTime;
 public class SaveInfo {
     private Long id;
     private Long userId;
+    private Long playerId;
     private Integer level;
     private Long exp;
+    private Integer currentHp;
+    private Integer currentMp;
     private Integer floor;
+    private Integer battleOrder;
     private Integer progress;
-    private Long monsterId;
     private Boolean isActive;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
@@ -33,6 +36,14 @@ public class SaveInfo {
         this.userId = userId;
     }
 
+    public Long getPlayerId() {
+        return playerId;
+    }
+
+    public void setPlayerId(Long playerId) {
+        this.playerId = playerId;
+    }
+
     public Integer getLevel() {
         return level;
     }
@@ -49,6 +60,22 @@ public class SaveInfo {
         this.exp = exp;
     }
 
+    public Integer getCurrentMp() {
+        return currentMp;
+    }
+
+    public void setCurrentMp(Integer currentMp) {
+        this.currentMp = currentMp;
+    }
+
+    public Integer getCurrentHp() {
+        return currentHp;
+    }
+
+    public void setCurrentHp(Integer currentHp) {
+        this.currentHp = currentHp;
+    }
+
     public Integer getFloor() {
         return floor;
     }
@@ -57,20 +84,20 @@ public class SaveInfo {
         this.floor = floor;
     }
 
+    public Integer getBattleOrder() {
+        return battleOrder;
+    }
+
+    public void setBattleOrder(Integer battleOrder) {
+        this.battleOrder = battleOrder;
+    }
+
     public Integer getProgress() {
         return progress;
     }
 
     public void setProgress(Integer progress) {
         this.progress = progress;
-    }
-
-    public Long getMonsterId() {
-        return monsterId;
-    }
-
-    public void setMonsterId(Long monsterId) {
-        this.monsterId = monsterId;
     }
 
     public Boolean getIsActive() {
@@ -100,9 +127,11 @@ public class SaveInfo {
     @Override
     public String toString() {
         return String.format(
-                "SaveInfo[id=%s, userId=%s, level=%s, exp=%s, floor=%s, progress=%s, monsterId=%s, isActive=%s, createTime=%s, updateTime=%s]",
-                getId(), getUserId(), getLevel(), getExp(), getFloor(), getProgress(),
-                getMonsterId(), getIsActive(), getCreateTime(), getUpdateTime()
+                "SaveInfo[id=%s, userId=%s, playerId, level=%s, exp=%s, currentHp=%s, currentMp=%s, floor=%s, " +
+                        "battleOrder=%s, progress=%s, isActive=%s, createTime=%s, " +
+                        "updateTime=%s]",
+                getId(), getUserId(), getPlayerId(), getLevel(), getExp(), getCurrentHp(), getCurrentMp(), getFloor(),
+                getBattleOrder(), getProgress(), getIsActive(), getCreateTime(), getUpdateTime()
         );
     }
 }

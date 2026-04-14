@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public class BattleInfo {
     private Long id;
+    private Long saveId;
     private Long userId;
     private Long monsterId;
     private Integer userCurrentHp;
@@ -24,6 +25,14 @@ public class BattleInfo {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getSaveId() {
+        return saveId;
+    }
+
+    public void setSaveId(Long saveId) {
+        this.saveId = saveId;
     }
 
     public Long getUserId() {
@@ -109,8 +118,8 @@ public class BattleInfo {
     @Override
     public String toString() {
         return String.format(
-                "BattleInfo[id=%s, userId=%s, monsterId=%s, userCurrentHp=%s, userCurrentMp=%s, userCurrentDefend=%s, monsterCurrentHp=%s, monsterCurrentMp=%s, monsterCurrentDefend=%s, createTime=%s, updateTime=%s]",
-                getId(), getUserId(), getMonsterId(), getUserCurrentHp(), getUserCurrentMp(), getUserCurrentDefend(),
+                "BattleInfo[id=%s, saveId=%s, userId=%s, monsterId=%s, userCurrentHp=%s, userCurrentMp=%s, userCurrentDefend=%s, monsterCurrentHp=%s, monsterCurrentMp=%s, monsterCurrentDefend=%s, createTime=%s, updateTime=%s]",
+                getId(), getSaveId(), getUserId(), getMonsterId(), getUserCurrentHp(), getUserCurrentMp(), getUserCurrentDefend(),
                 getMonsterCurrentHp(), getMonsterCurrentMp(), getMonsterCurrentDefend(), getCreateTime(), getUpdateTime()
         );
     }

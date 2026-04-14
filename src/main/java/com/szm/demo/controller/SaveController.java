@@ -31,7 +31,7 @@ public class SaveController {
         return Result.success(saveInfoList);
     }
 
-    @GetMapping("/showone/{id}")
+    @GetMapping("/show/{id}")
     public Result<SaveInfo> getOneSave(@PathVariable Long id ,HttpServletRequest request){
         Long userId = Long.parseLong(request.getAttribute("userId").toString());
         SaveInfo saveInfo = saveService.getSaveById(userId,id);

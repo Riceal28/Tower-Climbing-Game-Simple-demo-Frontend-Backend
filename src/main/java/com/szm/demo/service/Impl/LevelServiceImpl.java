@@ -4,9 +4,9 @@ import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.entity.LevelInfo;
-import com.szm.demo.entity.UserDetail;
+import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.mapper.LevelInfoMapper;
-import com.szm.demo.mapper.UserDetailMapper;
+import com.szm.demo.mapper.UserPlayerInfoMapper;
 import com.szm.demo.service.LevelService;
 import com.szm.demo.service.UserService;
 import com.szm.demo.util.RedisUtil;
@@ -33,7 +33,7 @@ public class LevelServiceImpl implements LevelService {
     LevelInfoMapper levelInfoMapper;
 
     @Autowired
-    UserDetailMapper userDetailMapper;
+    UserPlayerInfoMapper userPlayerInfoMapper;
 
     @Autowired
     RedisUtil redisUtil;
@@ -59,44 +59,41 @@ public class LevelServiceImpl implements LevelService {
     /**
      * 升级,需配合检测经验
      *
-     * @param userId   用户ID
+     * @param playerId   角色ID
      * @param extraExp 多余的经验
      * @return 新等级的经验
      */
     @Override
     @Transactional
-    public Long levelUp(Long userId, Long extraExp) {
-        UserDetail userDetail = userService.getUserDetail(userId);
-        int nextLevel = userDetail.getLevel() + 1;
-        if (nextLevel >= 37) {
-            userService.setExp(userId,0L);
+    public Long levelUp(Long playerId, Long extraExp) {
+        UserPlayerInfo userPlayerInfo = userService.getPlayerInfo(playerId);
+        int nextLevel = userPlayerInfo.getLevel() + 1;
+        if (nextLevel >= 37) {//todo:修改等级上限配置
+            userService.setExp(playerId,0L);
             return -1L;
         }
         try {
             LevelInfo levelInfo = getLevelInfo(nextLevel);
 
-            userDetail.setLevel(nextLevel);
-            userDetail.setExp(extraExp);
-            userDetail.setAttackBase(levelInfo.getAttackBase());
-            userDetail.setCurrentHp(levelInfo.getMaxHp());
-            userDetail.setCurrentMp(levelInfo.getMaxMp());
-            userDetail.setUpdateTime(LocalDateTime.now());
+            userPlayerInfo.setLevel(nextLevel);
+            userPlayerInfo.setExp(extraExp);
+            userPlayerInfo.setUpdateTime(LocalDateTime.now());//todo:mapper中的更新时间
             String key = RedisKeyConstants.USER_DETAIL.getKey(userId);
-            userDetailMapper.updateAllByUserId(userDetail);
+            userPlayerInfoMapper.updateAllById(userPlayerInfo);
 
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            redisUtil.set(key, userDetail, 1440, TimeUnit.MINUTES);
+                            redisUtil.set(key, userPlayerInfo, 1440, TimeUnit.MINUTES);//todo:修订redis部分
                         }
                     }
             );
         } catch (Exception e) {
-            logger.error("用户ID[{}]:升级失败", userDetail.getUserId(), e);
+            logger.error("角色ID[{}]:升级失败", userPlayerInfo.getId(), e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
-        logger.info("用户ID[{}]:升级成功,当前等级:{},多余经验值:{}",userId,nextLevel,extraExp);
+        logger.info("角色ID[{}]:升级成功,当前等级:{},多余经验值:{}",playerId,nextLevel,extraExp);
         return extraExp;
     }
 }

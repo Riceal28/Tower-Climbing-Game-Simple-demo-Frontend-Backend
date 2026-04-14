@@ -1,13 +1,22 @@
 package com.szm.demo.dto;
 
+import com.szm.demo.common.PlayerClass;
+
 public class PlayerShowResp {
+    private PlayerClass playerClass;
     private Integer level;
     private Long exp;
     private Integer attackBase;
     private Integer maxHp;
-    private Integer currentHp;
     private Integer maxMp;
-    private Integer currentMp;
+
+    public PlayerClass getPlayerClass() {
+        return playerClass;
+    }
+
+    public void setPlayerClass(PlayerClass playerClass) {
+        this.playerClass = playerClass;
+    }
 
     public Integer getLevel() {
         return level;
@@ -41,14 +50,6 @@ public class PlayerShowResp {
         this.maxHp = maxHp;
     }
 
-    public Integer getCurrentHp() {
-        return currentHp;
-    }
-
-    public void setCurrentHp(Integer currentHp) {
-        this.currentHp = currentHp;
-    }
-
     public Integer getMaxMp() {
         return maxMp;
     }
@@ -57,11 +58,4 @@ public class PlayerShowResp {
         this.maxMp = maxMp;
     }
 
-    public Integer getCurrentMp() {
-        return currentMp;
-    }
-
-    public void setCurrentMp(Integer currentMp) {
-        this.currentMp = currentMp;
-    }
 }

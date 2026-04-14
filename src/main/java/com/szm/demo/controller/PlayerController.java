@@ -3,8 +3,7 @@ package com.szm.demo.controller;
 import com.szm.demo.common.ApiConstant;
 import com.szm.demo.common.Result;
 import com.szm.demo.dto.PlayerShowResp;
-import com.szm.demo.entity.LevelInfo;
-import com.szm.demo.entity.UserDetail;
+import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.service.LevelService;
 import com.szm.demo.service.PlayerService;
 import com.szm.demo.service.UserService;
@@ -22,20 +21,18 @@ public class PlayerController {
     PlayerService playerService;
     @Autowired
     private UserService userService;
-    @Autowired
-    private LevelService levelService;
 
     @GetMapping("/show")
     public Result<PlayerShowResp> showPlayer(HttpServletRequest request){
         Long userId = Long.parseLong(request.getAttribute("userId").toString());
         PlayerShowResp resp = new PlayerShowResp();
-        UserDetail userDetail = userService.getUserDetail(userId);
+        UserPlayerInfo userPlayerInfo = userService.getPlayerInfo(userId);
         return Result.success(playerService.showPlayer(userId));
     }
-    @PostMapping("/create")
+    @PostMapping("/create")//todo:等待service修订完毕再修改
     public Result<String> createPlayer(HttpServletRequest request) {
         Long userId = Long.parseLong(request.getAttribute("userId").toString());
-        playerService.createDefaultPlayer(userId);
+        playerService.createPlayer(userId);
         return Result.success("创建角色成功");
     }
     @PostMapping("/levelup")
