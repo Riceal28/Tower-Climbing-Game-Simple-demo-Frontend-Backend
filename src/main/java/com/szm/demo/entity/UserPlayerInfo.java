@@ -14,6 +14,9 @@ public class UserPlayerInfo {
     private PlayerClass playerClass;
     private Integer level;
     private Long exp;
+    private Integer attackBase;
+    private Integer currentHp;
+    private Integer currentMp;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
@@ -60,6 +63,30 @@ public class UserPlayerInfo {
         this.exp = exp;
     }
 
+    public Integer getAttackBase() {
+        return attackBase;
+    }
+
+    public void setAttackBase(Integer attackBase) {
+        this.attackBase = attackBase;
+    }
+
+    public Integer getCurrentHp() {
+        return currentHp;
+    }
+
+    public void setCurrentHp(Integer currentHp) {
+        this.currentHp = currentHp;
+    }
+
+    public Integer getCurrentMp() {
+        return currentMp;
+    }
+
+    public void setCurrentMp(Integer currentMp) {
+        this.currentMp = currentMp;
+    }
+
     public LocalDateTime getCreateTime() {
         return createTime;
     }
@@ -79,8 +106,8 @@ public class UserPlayerInfo {
     @Override
     public String toString() {
         return String.format(
-                "UserDetail[id=%s, userId=%s, playerClass=%s, level=%s, exp=%s, createTime=%s, updateTime=%s]",
-                getId(), getUserId(), getPlayerClass(),getLevel(), getExp(), getCreateTime(), getUpdateTime()
+                "UserDetail[id=%s, userId=%s, playerClass=%s, level=%s, exp=%s, attackBase=%s, currentHp=%s, currentMp=%s, createTime=%s, updateTime=%s]",
+                getId(), getUserId(), getPlayerClass(), getLevel(), getExp(), getAttackBase(), getCurrentHp(), getCurrentMp(), getCreateTime(), getUpdateTime()
         );
     }
 }

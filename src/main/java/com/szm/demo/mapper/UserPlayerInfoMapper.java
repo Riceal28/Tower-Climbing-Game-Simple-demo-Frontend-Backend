@@ -24,16 +24,19 @@ public interface UserPlayerInfoMapper {
      * 新增用户角色
      */
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
-    @Insert("INSERT INTO user_player_info (user_id, player_class, level, exp, create_time, update_time) " +
+    @Insert("INSERT INTO user_player_info (user_id, player_class, level, exp, attack_base, current_hp, " +
+            "current_mp, create_time, update_time) " +
             "VALUES (#{userPlayerInfo.userId},#{userPlayerInfo.playerClass},#{userPlayerInfo.level}," +
-            "#{userPlayerInfo.exp},#{userPlayerInfo.createTime},#{userPlayerInfo.updateTime})")
+            "#{userPlayerInfo.exp},#{userPlayerInfo.attackBase},#{userPlayerInfo.currentHp}," +
+            "#{userPlayerInfo.currentMp},#{userPlayerInfo.createTime},#{userPlayerInfo.updateTime})")
     void insert(@Param("userPlayerInfo") UserPlayerInfo userPlayerInfo);
 
     /**
      * 根据ID更新全部信息
      */
     @Update("UPDATE user_player_info SET level=#{userPlayerInfo.level}, exp=#{userPlayerInfo.exp}, " +
-            "update_time=#{userPlayerInfo.updateTime}" +
+            "attack_base=#{userPlayerInfo.attackBase}, current_hp=#{userPlayerInfo.currentHp}, " +
+            "current_mp=#{userPlayerInfo.currentMp}, update_time=#{userPlayerInfo.updateTime}" +
             "WHERE id=#{userPlayerInfo.id}")
     int updateAllById(@Param("userPlayerInfo") UserPlayerInfo userPlayerInfo);
 
