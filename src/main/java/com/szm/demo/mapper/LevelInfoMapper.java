@@ -1,5 +1,6 @@
 package com.szm.demo.mapper;
 
+import com.szm.demo.common.PlayerClass;
 import com.szm.demo.entity.LevelInfo;
 import org.apache.ibatis.annotations.*;
 
@@ -15,10 +16,10 @@ public interface LevelInfoMapper {
     LevelInfo getById(@Param("id") Integer id);
 
     /**
-     * 根据等级查询等级配置
+     * 根据职阶与等级查询等级配置
      */
-    @Select("SELECT * FROM level_info WHERE level = #{level}")
-    LevelInfo getByLevel(@Param("level") Integer level);
+    @Select("SELECT * FROM level_info WHERE player_class=#{playerClass} AND level = #{level}")
+    LevelInfo getByClassLevel(@Param("playerClass")PlayerClass playerClass, @Param("level") Integer level);
 
     /**
      * 分页查询所有等级配置
@@ -27,17 +28,11 @@ public interface LevelInfoMapper {
     List<LevelInfo> getAll(@Param("offset") int offset, @Param("maxResults") int maxResults);
 
     /**
-     * 查询所有等级（无分页）
-     */
-    @Select("SELECT * FROM level_info ORDER BY level ASC")
-    List<LevelInfo> listAll();
-
-    /**
      * 新增等级配置
      */
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
-    @Insert("INSERT INTO level_info (level, needed_exp, max_hp, max_mp, attack_base) " +
-            "VALUES (#{levelInfo.level}, #{levelInfo.neededExp}, #{levelInfo.maxHp}, #{levelInfo.maxMp}, #{levelInfo.attackBase})")
+    @Insert("INSERT INTO level_info (player_class, level, needed_exp, max_hp, max_mp, attack_base) " +
+            "VALUES (#{levelInfo.playerClass}, #{levelInfo.level}, #{levelInfo.neededExp}, #{levelInfo.maxHp}, #{levelInfo.maxMp}, #{levelInfo.attackBase})")
     void insert(@Param("levelInfo") LevelInfo levelInfo);
 
     /**

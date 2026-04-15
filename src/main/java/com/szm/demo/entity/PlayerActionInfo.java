@@ -2,17 +2,22 @@ package com.szm.demo.entity;
 
 import java.time.LocalDateTime;
 
-public class UserActionInfo {
+/**
+ * 角色技能关联表
+ * 对应数据库表：player_action_info
+ */
+public class PlayerActionInfo {
+
     private Long id;
     private Long battleId;
-    private Long userId;
+    private Long playerId;
     private Long actionId;
     private Integer currentCd;
     private Integer restContinueRound;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
-    public UserActionInfo() {
+    public PlayerActionInfo() {
     }
 
     public Long getId() {
@@ -31,12 +36,12 @@ public class UserActionInfo {
         this.battleId = battleId;
     }
 
-    public Long getUserId() {
-        return userId;
+    public Long getPlayerId() {
+        return playerId;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setPlayerId(Long playerId) {
+        this.playerId = playerId;
     }
 
     public Long getActionId() {
@@ -81,7 +86,7 @@ public class UserActionInfo {
 
     @Override
     public String toString() {
-        return String.format("UserActionInfo[id=%s, battleId=%s, userId=%s, actionId=%s, currentCd=%s, restContinueRound=%s, createTime=%s, updateTime=%s]",
-                getId(), getBattleId(), getUserId(), getActionId(), getCurrentCd(), getRestContinueRound(), getCreateTime(), getUpdateTime());
+        return String.format("PlayerActionInfo[id=%s, battleId=%s, playerId=%s, actionId=%s, currentCd=%s, restContinueRound=%s, createTime=%s, updateTime=%s]",
+                getId(), getBattleId(), getPlayerId(), getActionId(), getCurrentCd(), getRestContinueRound(), getCreateTime(), getUpdateTime());
     }
 }

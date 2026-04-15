@@ -2,6 +2,10 @@ package com.szm.demo.entity;
 
 import java.time.LocalDateTime;
 
+/**
+ * 游戏存档表 实体类
+ * 对应数据库表：save_info
+ */
 public class SaveInfo {
     private Long id;
     private Long userId;
@@ -13,7 +17,6 @@ public class SaveInfo {
     private Integer floor;
     private Integer battleOrder;
     private Integer progress;
-    private Boolean isActive;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
@@ -60,20 +63,20 @@ public class SaveInfo {
         this.exp = exp;
     }
 
-    public Integer getCurrentMp() {
-        return currentMp;
-    }
-
-    public void setCurrentMp(Integer currentMp) {
-        this.currentMp = currentMp;
-    }
-
     public Integer getCurrentHp() {
         return currentHp;
     }
 
     public void setCurrentHp(Integer currentHp) {
         this.currentHp = currentHp;
+    }
+
+    public Integer getCurrentMp() {
+        return currentMp;
+    }
+
+    public void setCurrentMp(Integer currentMp) {
+        this.currentMp = currentMp;
     }
 
     public Integer getFloor() {
@@ -100,14 +103,6 @@ public class SaveInfo {
         this.progress = progress;
     }
 
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
     public LocalDateTime getCreateTime() {
         return createTime;
     }
@@ -124,14 +119,12 @@ public class SaveInfo {
         this.updateTime = updateTime;
     }
 
+    /**
+     * 修复toString方法格式错误、字段缺失问题
+     */
     @Override
     public String toString() {
-        return String.format(
-                "SaveInfo[id=%s, userId=%s, playerId, level=%s, exp=%s, currentHp=%s, currentMp=%s, floor=%s, " +
-                        "battleOrder=%s, progress=%s, isActive=%s, createTime=%s, " +
-                        "updateTime=%s]",
-                getId(), getUserId(), getPlayerId(), getLevel(), getExp(), getCurrentHp(), getCurrentMp(), getFloor(),
-                getBattleOrder(), getProgress(), getIsActive(), getCreateTime(), getUpdateTime()
-        );
+        return String.format("SaveInfo[id=%s, userId=%s, playerId=%s, level=%s, exp=%s, currentHp=%s, currentMp=%s, floor=%s, battleOrder=%s, progress=%s, createTime=%s, updateTime=%s]",
+                getId(), getUserId(), getPlayerId(), getLevel(), getExp(), getCurrentHp(), getCurrentMp(), getFloor(), getBattleOrder(), getProgress(), getCreateTime(), getUpdateTime());
     }
 }

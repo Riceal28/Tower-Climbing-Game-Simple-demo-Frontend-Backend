@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public class LevelInfo {
     private Integer id;
+    private String playerClass;
     private Integer level;
     private Long neededExp;
     private Integer maxHp;
@@ -21,6 +22,14 @@ public class LevelInfo {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public String getPlayerClass() {
+        return playerClass;
+    }
+
+    public void setPlayerClass(String playerClass) {
+        this.playerClass = playerClass;
     }
 
     public Integer getLevel() {
@@ -79,7 +88,7 @@ public class LevelInfo {
         this.updateTime = updateTime;
     }
 
-    @Override
+    @Override//todo:修订
     public String toString() {
         return String.format(
                 "LevelInfo[id=%s, level=%s, neededExp=%s, maxHp=%s, maxMp=%s, attackBase=%s, createTime=%s, updateTime=%s]",

@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 public class TowerFloorMonsterInfo {
     private Long id;
     private Integer floor;          // 层数
-    private Long monsterId;        // 魔物ID
     private Integer battleOrder;   // 遇敌顺序
+    private Long monsterId;        // 魔物ID
     private Integer rewardProgress;// 击败后获得的层数进度
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
