@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface SaveService {
 
-    void createDefaultSave(Long userId);
+    void createDefaultSave(Long userId, Long playerId);
     List<SaveInfo> getSaveByUserId(Long userId);
     SaveInfo getSaveById(Long userId, Long id);
     void clearAllActiveSave(Long userId);

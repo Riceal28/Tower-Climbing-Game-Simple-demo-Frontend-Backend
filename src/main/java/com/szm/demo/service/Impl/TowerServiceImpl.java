@@ -72,7 +72,7 @@ public class TowerServiceImpl implements TowerService {
             if (!towerFloorMonsterInfoList.isEmpty()) {
                 return towerFloorMonsterInfoList;
             }
-            towerFloorMonsterInfoList = towerMapper.getDetailByFloor(floor);
+            towerFloorMonsterInfoList = towerMapper.getAllDetailByFloor(floor);
             if (towerFloorMonsterInfoList.isEmpty()) {
                 throw new BusinessException(ResultCode.NOT_FOUND, "未配置该楼层详细信息");
             }

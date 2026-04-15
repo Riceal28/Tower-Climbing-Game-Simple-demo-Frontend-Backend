@@ -6,10 +6,10 @@ import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.dto.PlayerShowResp;
 import com.szm.demo.entity.LevelInfo;
-import com.szm.demo.entity.UserActionInfo;
+import com.szm.demo.entity.PlayerActionInfo;
 import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.mapper.LevelInfoMapper;
-import com.szm.demo.mapper.UserActionInfoMapper;
+import com.szm.demo.mapper.PlayerActionInfoMapper;
 import com.szm.demo.mapper.UserPlayerInfoMapper;
 import com.szm.demo.service.LevelService;
 import com.szm.demo.service.PlayerService;
@@ -43,7 +43,7 @@ public class PlayerServiceImpl implements PlayerService {
     LevelInfoMapper levelInfoMapper;
 
     @Autowired
-    UserActionInfoMapper userActionInfoMapper;
+    PlayerActionInfoMapper playerActionInfoMapper;
 
     @Autowired
     LevelService levelService;
@@ -66,25 +66,25 @@ public class PlayerServiceImpl implements PlayerService {
             userPlayerInfoMapper.insert(userPlayerInfo);
 
             //创建角色技能组//todo:技能组相关方法解耦
-            List<UserActionInfo> userActionInfoList = new ArrayList<>();
+            List<PlayerActionInfo> playerActionInfoList = new ArrayList<>();
             for (long i = 1L; i <= 5; i++) {
-                UserActionInfo userActionInfo = new UserActionInfo();
-                userActionInfo.setBattleId(0L);
-                userActionInfo.setUserId(userId);
-                userActionInfo.setActionId(i);
-                userActionInfo.setCurrentCd(0);
-                userActionInfo.setRestContinueRound(0);
-                userActionInfo.setCreateTime(LocalDateTime.now());
-                userActionInfo.setUpdateTime(LocalDateTime.now());
-                userActionInfoList.add(userActionInfo);
+                PlayerActionInfo playerActionInfo = new PlayerActionInfo();
+                playerActionInfo.setBattleId(0L);
+                playerActionInfo.setUserId(userId);
+                playerActionInfo.setActionId(i);
+                playerActionInfo.setCurrentCd(0);
+                playerActionInfo.setRestContinueRound(0);
+                playerActionInfo.setCreateTime(LocalDateTime.now());
+                playerActionInfo.setUpdateTime(LocalDateTime.now());
+                playerActionInfoList.add(playerActionInfo);
             }
-            userActionInfoMapper.batchInsert(userActionInfoList);
+            playerActionInfoMapper.batchInsert(playerActionInfoList);
 
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            String key = RedisKeyConstants.USER_DETAIL.getKey(userId);//todo:redis修订
+                            String key = RedisKeyConstants.USER_PLAYER.getKey(userId);//todo:redis修订
                             redisUtil.set(key, userPlayerInfo, 1440, TimeUnit.MINUTES);
                         }
                     }
@@ -126,7 +126,7 @@ public class PlayerServiceImpl implements PlayerService {
         userPlayerInfo.setLevel(levelInfo.getLevel());
         userPlayerInfo.setUpdateTime(LocalDateTime.now());
         userService.setPlayerInfo(userPlayerInfo);
-        String key = RedisKeyConstants.USER_DETAIL.getKey(userId);//todo:修订redis
+        String key = RedisKeyConstants.USER_PLAYER.getKey(userId);//todo:修订redis
         redisUtil.delete(key);
         logger.warn("用户ID[{}]:重置了角色", userId);
     }

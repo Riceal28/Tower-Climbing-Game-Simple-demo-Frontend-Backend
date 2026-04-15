@@ -98,7 +98,7 @@ public class UserServiceImpl implements UserService {
         if (playerId == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
-        String key = RedisKeyConstants.USER_DETAIL.getKey(userId);//todo:修订redis部分
+        String key = RedisKeyConstants.USER_PLAYER.getKey(userId);//todo:修订redis部分
         UserPlayerInfo userPlayerInfo = redisUtil.get(key, UserPlayerInfo.class);
         if (userPlayerInfo == null) {
             userPlayerInfo = userPlayerInfoMapper.getById(playerId);
@@ -122,7 +122,7 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
         Long userId = userPlayerInfo.getUserId();
-        String key = RedisKeyConstants.USER_DETAIL.getKey(userId);//todo:修订redis部分
+        String key = RedisKeyConstants.USER_PLAYER.getKey(userId);//todo:修订redis部分
         try {
             userPlayerInfoMapper.updateAllById(userPlayerInfo);
             TransactionSynchronizationManager.registerSynchronization(
@@ -145,7 +145,7 @@ public class UserServiceImpl implements UserService {
     public void setExp(Long playerId, Long exp) {
         try {
             userPlayerInfoMapper.updateExpById(playerId, exp);
-            String key = RedisKeyConstants.USER_DETAIL.getKey(userId);//todo:修订redis部分
+            String key = RedisKeyConstants.USER_PLAYER.getKey(userId);//todo:修订redis部分
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
                         @Override

@@ -3,9 +3,11 @@ package com.szm.demo.service.Impl;
 import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
+import com.szm.demo.entity.LevelInfo;
 import com.szm.demo.entity.SaveInfo;
 import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.mapper.SaveInfoMapper;
+import com.szm.demo.service.LevelService;
 import com.szm.demo.service.SaveService;
 import com.szm.demo.service.UserService;
 import com.szm.demo.util.RedisUtil;
@@ -35,6 +37,8 @@ public class SaveServiceImpl implements SaveService {
 
     @Autowired
     SaveInfoMapper saveInfoMapper;
+    @Autowired
+    private LevelService levelService;
 
     /**
      * 创建默认存档
@@ -45,15 +49,16 @@ public class SaveServiceImpl implements SaveService {
      */
     @Override
     @Transactional
-    public void createDefaultSave(Long playerId) {//todo:等待存档表修订
+    public void createDefaultSave(Long userId, Long playerId) {//todo:等待存档表修订
         try {
             SaveInfo saveInfo = new SaveInfo();
             UserPlayerInfo userPlayerInfo = userService.getPlayerInfo(playerId);
+            LevelInfo levelInfo = levelService.getLevelInfo(userPlayerInfo.getLevel());
             saveInfo.setUserId(userId);//创建初始角色-使用角色创建存档-存档-角色信息界面
             saveInfo.setLevel(userPlayerInfo.getLevel());
             saveInfo.setExp(userPlayerInfo.getExp());
-            saveInfo.setCurrentHp(userPlayerInfo.getCurrentHp());
-            saveInfo.setCurrentMp(userPlayerInfo.getCurrentMp());
+            saveInfo.setCurrentHp(levelInfo.getMaxHp());
+            saveInfo.setCurrentMp(levelInfo.getMaxMp());
             saveInfo.setFloor(1);
             saveInfo.setBattleOrder(0);
             saveInfo.setIsActive(false);

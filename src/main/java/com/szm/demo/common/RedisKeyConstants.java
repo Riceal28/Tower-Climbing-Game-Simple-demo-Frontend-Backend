@@ -12,10 +12,10 @@ public enum RedisKeyConstants {
 //    MONSTER_ACTION_INFO("monsterActionInfo:"),
 //    BATTLE_INFO("battleInfo:");
     USER_INFO("demo:user:info:%s","userId"),
-    USER_DETAIL("demo:user:detail:%s","userId"),
-    USER_TOKEN_IN("demo:user:token:%s","JTI"),
-    USER_TOKEN_OUT("demo:user:token:blacklist:%s","JTI"),
-    LEVEL_INFO("demo:level:%s","level"),
+    USER_PLAYER("demo:user:player:%s","playerId"),//todo:改为HASH
+    USER_TOKEN_IN("demo:login:white:%s","JTI"),
+    USER_TOKEN_OUT("demo:login:black:%s","JTI"),
+    LEVEL_INFO("demo:level:class:%s:s","playerClass, level"),
     PLAYER_SHOW("demo:user:player:%s","userId"),
     SAVE_LIST("demo:save:list:%s","userId(存存档ID)"),
     SAVE_DETAIL("demo:save:%s:%s","userId, id"),
