@@ -18,7 +18,7 @@ public interface LevelInfoMapper {
     /**
      * 根据职阶与等级查询等级配置
      */
-    @Select("SELECT * FROM level_info WHERE player_class=#{playerClass} AND level = #{level}")
+    @Select("SELECT * FROM level_info WHERE player_class=#{playerClass.value} AND level = #{level}")
     LevelInfo getByClassLevel(@Param("playerClass")PlayerClass playerClass, @Param("level") Integer level);
 
     /**
@@ -32,7 +32,7 @@ public interface LevelInfoMapper {
      */
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     @Insert("INSERT INTO level_info (player_class, level, needed_exp, max_hp, max_mp, attack_base) " +
-            "VALUES (#{levelInfo.playerClass}, #{levelInfo.level}, #{levelInfo.neededExp}, #{levelInfo.maxHp}, #{levelInfo.maxMp}, #{levelInfo.attackBase})")
+            "VALUES (#{levelInfo.playerClass.value}, #{levelInfo.level}, #{levelInfo.neededExp}, #{levelInfo.maxHp}, #{levelInfo.maxMp}, #{levelInfo.attackBase})")
     void insert(@Param("levelInfo") LevelInfo levelInfo);
 
     /**
