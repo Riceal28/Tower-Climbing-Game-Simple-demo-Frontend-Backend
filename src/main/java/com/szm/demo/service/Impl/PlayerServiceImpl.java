@@ -4,6 +4,7 @@ import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.PlayerClass;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
+import com.szm.demo.context.GameContext;
 import com.szm.demo.dto.PlayerShowResp;
 import com.szm.demo.entity.LevelInfo;
 import com.szm.demo.entity.PlayerActionInfo;
@@ -53,24 +54,31 @@ public class PlayerServiceImpl implements PlayerService {
 
     @Override
     @Transactional//抛出异常自动回滚
-    public void createPlayer(Long userId, PlayerClass playerClass) {
+    public void createPlayer(PlayerClass playerClass) {
+        Long userId = GameContext.getUserId();
+        if (userId == null) {
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
         try {
-            LevelInfo levelInfo = levelInfoMapper.getByLevel(1);
+            LevelInfo levelInfo = levelInfoMapper.getByClassLevel(playerClass, 1);
             UserPlayerInfo userPlayerInfo = new UserPlayerInfo();
             userPlayerInfo.setUserId(userId);
             userPlayerInfo.setPlayerClass(playerClass);
             userPlayerInfo.setLevel(levelInfo.getLevel());
             userPlayerInfo.setExp(0L);
+            userPlayerInfo.setAttackBase(levelInfo.getAttackBase());
+            userPlayerInfo.setCurrentHp(levelInfo.getMaxHp());
+            userPlayerInfo.setCurrentMp(levelInfo.getMaxMp());
             userPlayerInfo.setCreateTime(LocalDateTime.now());
             userPlayerInfo.setUpdateTime(LocalDateTime.now());
             userPlayerInfoMapper.insert(userPlayerInfo);
-
+            Long playerId = userPlayerInfo.getId();
             //创建角色技能组//todo:技能组相关方法解耦
             List<PlayerActionInfo> playerActionInfoList = new ArrayList<>();
             for (long i = 1L; i <= 5; i++) {
                 PlayerActionInfo playerActionInfo = new PlayerActionInfo();
                 playerActionInfo.setBattleId(0L);
-                playerActionInfo.setUserId(userId);
+                playerActionInfo.setPlayerId(userId);//todo:
                 playerActionInfo.setActionId(i);
                 playerActionInfo.setCurrentCd(0);
                 playerActionInfo.setRestContinueRound(0);
@@ -84,7 +92,7 @@ public class PlayerServiceImpl implements PlayerService {
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            String key = RedisKeyConstants.USER_PLAYER.getKey(userId);//todo:redis修订
+                            String key = RedisKeyConstants.USER_PLAYER.getKey(playerId);//todo:调整为HASH
                             redisUtil.set(key, userPlayerInfo, 1440, TimeUnit.MINUTES);
                         }
                     }
@@ -97,10 +105,11 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override//todo:待优化
-    public PlayerShowResp showPlayer(Long userId) {
+    public PlayerShowResp showPlayer() {
+        Long userId = GameContext.getUserId();
         if (userId == null) {
-            throw new BusinessException(ResultCode.BAD_REQUEST);
-        }
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }//todo:4.15
         String key = RedisKeyConstants.PLAYER_SHOW.getKey(userId);
         PlayerShowResp resp = redisUtil.get(key, PlayerShowResp.class);
         if (resp == null) {

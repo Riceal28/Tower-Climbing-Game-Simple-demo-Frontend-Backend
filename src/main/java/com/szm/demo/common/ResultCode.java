@@ -9,6 +9,7 @@ public enum ResultCode {
     FORBIDDEN(403, "无权限访问"),
     NOT_FOUND(404, "资源不存在"),
     METHOD_NOT_ALLOWED(405, "请求方法不支持"),
+    PRECONDITION_FAILED(412,"先决条件错误"),
     VALIDATE_FAILED(422, "参数验证失败"),
     // 业务错误 500-599
     BUSINESS_ERROR(500, "业务处理失败"),

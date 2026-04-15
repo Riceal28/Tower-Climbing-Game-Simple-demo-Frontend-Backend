@@ -4,7 +4,6 @@ import com.szm.demo.common.ApiConstant;
 import com.szm.demo.common.Result;
 import com.szm.demo.dto.PlayerShowResp;
 import com.szm.demo.entity.UserPlayerInfo;
-import com.szm.demo.service.LevelService;
 import com.szm.demo.service.PlayerService;
 import com.szm.demo.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,7 +26,7 @@ public class PlayerController {
         Long userId = Long.parseLong(request.getAttribute("userId").toString());
         PlayerShowResp resp = new PlayerShowResp();
         UserPlayerInfo userPlayerInfo = userService.getPlayerInfo(userId);
-        return Result.success(playerService.showPlayer(userId));
+        return Result.success(playerService.showPlayer());
     }
     @PostMapping("/create")//todo:等待service修订完毕再修改
     public Result<String> createPlayer(HttpServletRequest request) {
