@@ -1,0 +1,26 @@
+package com.szm.demo.config;
+
+import com.szm.demo.context.GameContext;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+
+import java.io.IOException;
+
+public class GameContextFilter implements Filter {
+
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain chain) throws IOException, ServletException {
+        try {
+            HttpServletRequest request = (HttpServletRequest) servletRequest;
+            Long userId = Long.valueOf(request.getHeader("X-User-Id"));
+            Long playerId = Long.valueOf(request.getHeader("X-Player-Id"));
+            Long saveId = Long.valueOf(request.getHeader("X-Save-Id"));
+            if (userId != null && playerId != null &&saveId!=null){
+                GameContext.init(userId,playerId,saveId);
+            }
+            chain.doFilter(request,servletResponse);
+        } finally {
+            GameContext.clear();
+        }
+    }
+}
