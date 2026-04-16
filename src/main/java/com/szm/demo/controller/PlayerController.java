@@ -17,7 +17,7 @@ public class PlayerController {
     @Autowired
     PlayerService playerService;
 
-    @GetMapping("/show")
+    @GetMapping("/showbase")
     public Result<PlayerShowResp> showPlayer() {
         return Result.success(playerService.showPlayer());
     }
@@ -31,7 +31,8 @@ public class PlayerController {
     @PostMapping("/levelup")
     public Result<String> playerLevelUP(@RequestBody Long exp) {
         UserPlayerInfo userPlayerInfo = playerService.getPlayerInfo();
-        userPlayerInfo.setExp(exp);
+        Long newExp = userPlayerInfo.getExp()+exp;
+        userPlayerInfo.setExp(newExp);
         playerService.updatePlayerInfo(userPlayerInfo);
         playerService.tryLevelUp();
         return Result.success("升级成功");

@@ -38,9 +38,6 @@ public class UserServiceImpl implements UserService {
     @Autowired
     UserInfoMapper userInfoMapper;
 
-    @Autowired
-    UserPlayerInfoMapper userPlayerInfoMapper;
-
     @Override
     public void register(UserRegisterReq req) {
         if (req == null || req.getUsername().isBlank()
@@ -64,7 +61,7 @@ public class UserServiceImpl implements UserService {
                 || req.getPassword().isBlank()) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
-        //todo:登录限流(redis或其他)
+        //todo:登录限流(redis或其他) 低优先级
         UserInfo userInfo = userInfoMapper.getByUsername(req.getUsername());
         if (userInfo == null) {
             throw new BusinessException(ResultCode.USER_NOT_EXIST, "用户不存在");
