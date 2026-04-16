@@ -2,12 +2,10 @@ package com.szm.demo.service.Impl;
 
 import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.ResultCode;
+import com.szm.demo.context.GameContext;
 import com.szm.demo.entity.SaveInfo;
 import com.szm.demo.entity.UserPlayerInfo;
-import com.szm.demo.service.BattleService;
-import com.szm.demo.service.SaveService;
-import com.szm.demo.service.TowerService;
-import com.szm.demo.service.UserService;
+import com.szm.demo.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,20 +24,21 @@ public class BattleServiceImpl implements BattleService {
     SaveService saveService;
 
     @Autowired
-    UserService userService;
+    PlayerService playerService;
 
     @Override
     @Transactional
     public void battleInit(SaveInfo saveInfo) {
+        Long saveId = GameContext.getSaveId();
         if (saveId == null) {
-            throw new BusinessException(ResultCode.BAD_REQUEST);
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
         }
         try {
-            UserPlayerInfo userPlayerInfo = userService.getPlayerInfo(userId);
+            UserPlayerInfo userPlayerInfo = playerService.getPlayerInfo();
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            logger.error("用户[{}]初始化战斗失败", userId, e);
+            logger.error("存档ID[{}]初始化战斗失败", saveId, e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
     }

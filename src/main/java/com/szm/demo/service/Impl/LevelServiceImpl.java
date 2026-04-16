@@ -10,7 +10,8 @@ import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.mapper.LevelInfoMapper;
 import com.szm.demo.mapper.UserPlayerInfoMapper;
 import com.szm.demo.service.LevelService;
-import com.szm.demo.service.UserService;
+import com.szm.demo.service.PlayerService;
+import com.szm.demo.util.MapUtil;
 import com.szm.demo.util.RedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,8 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -29,7 +32,7 @@ public class LevelServiceImpl implements LevelService {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    UserService userService;
+    PlayerService playerService;
 
     @Autowired
     LevelInfoMapper levelInfoMapper;
@@ -69,29 +72,23 @@ public class LevelServiceImpl implements LevelService {
     @Transactional
     public Long levelUp(Long extraExp) {
         Long playerId = GameContext.getPlayerId();
-        UserPlayerInfo userPlayerInfo = userService.getPlayerInfo();
+        UserPlayerInfo userPlayerInfo = playerService.getPlayerInfo();
         int nextLevel = userPlayerInfo.getLevel() + 1;
         if (nextLevel >= 37) {//todo:修改等级上限配置
-            userService.setExp(playerId, 0L);
+            userPlayerInfo.setExp(0L);
+            playerService.updatePlayerInfo(userPlayerInfo);
             return -1L;
         }
+        LevelInfo levelInfo = getLevelInfo(userPlayerInfo.getPlayerClass(),nextLevel);
         try {
-            LevelInfo levelInfo = getLevelInfo(userPlayerInfo.getPlayerClass(), nextLevel);
-
             userPlayerInfo.setLevel(nextLevel);
             userPlayerInfo.setExp(extraExp);
+            userPlayerInfo.setAttackBase(levelInfo.getAttackBase());
+            userPlayerInfo.setCurrentHp(levelInfo.getMaxHp());//todo:可调整点:升级恢复状态或者不变
+            userPlayerInfo.setCurrentMp(levelInfo.getMaxMp());
             userPlayerInfo.setUpdateTime(LocalDateTime.now());
-            String key = RedisKeyConstants.USER_PLAYER.getKey(playerId);
-            userPlayerInfoMapper.updateAllById(userPlayerInfo);
+            playerService.updatePlayerInfo(userPlayerInfo);
 
-            TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            redisUtil.set(key, userPlayerInfo, 1440, TimeUnit.MINUTES);//todo:改用HASH
-                        }
-                    }
-            );
         } catch (Exception e) {
             logger.error("角色ID[{}]:升级失败", userPlayerInfo.getId(), e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR);

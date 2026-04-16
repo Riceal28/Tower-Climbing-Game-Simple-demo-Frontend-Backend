@@ -8,7 +8,4 @@ public interface UserService {
     void register(UserRegisterReq req);
     String login(UserLoginReq req);
     void logout(String token);
-    UserPlayerInfo getPlayerInfo(Long playerId);
-    void setPlayerInfo(UserPlayerInfo userPlayerInfo);
-    void setExp(Long userId, Long exp);
 }

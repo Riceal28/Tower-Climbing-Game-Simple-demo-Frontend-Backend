@@ -6,11 +6,8 @@ import java.util.List;
 
 public interface SaveService {
 
-    void createDefaultSave(Long userId, Long playerId);
-    List<SaveInfo> getSaveByUserId(Long userId);
-    SaveInfo getSaveById(Long userId, Long id);
-    void clearAllActiveSave(Long userId);
-    void setSaveActive(Long userId, Long id);
-    SaveInfo getActiveSave(Long userId);
-    void updateSave(SaveInfo saveInfo,Long userId);
+    void createDefaultSave();
+    List<SaveInfo> getSaveByUserId();
+    SaveInfo getSaveById();
+    void updateSave(SaveInfo saveInfo);
 }
