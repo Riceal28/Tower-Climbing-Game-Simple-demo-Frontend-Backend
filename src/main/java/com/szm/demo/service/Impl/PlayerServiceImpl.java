@@ -13,6 +13,7 @@ import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.mapper.LevelInfoMapper;
 import com.szm.demo.mapper.PlayerActionInfoMapper;
 import com.szm.demo.mapper.UserPlayerInfoMapper;
+import com.szm.demo.service.ActionService;
 import com.szm.demo.service.LevelService;
 import com.szm.demo.service.PlayerService;
 import com.szm.demo.util.MapUtil;
@@ -41,13 +42,10 @@ public class PlayerServiceImpl implements PlayerService {
     UserPlayerInfoMapper userPlayerInfoMapper;
 
     @Autowired
-    LevelInfoMapper levelInfoMapper;
-
-    @Autowired
-    PlayerActionInfoMapper playerActionInfoMapper;
-
-    @Autowired
     LevelService levelService;
+
+    @Autowired
+    ActionService actionService;
 
     @Override
     @Transactional//抛出异常自动回滚
@@ -57,7 +55,7 @@ public class PlayerServiceImpl implements PlayerService {
             throw new BusinessException(ResultCode.PRECONDITION_FAILED);
         }
         try {
-            LevelInfo levelInfo = levelInfoMapper.getByClassLevel(playerClass, 1);
+            LevelInfo levelInfo = levelService.getLevelInfo(playerClass,1);
             UserPlayerInfo userPlayerInfo = new UserPlayerInfo();
             userPlayerInfo.setUserId(userId);
             userPlayerInfo.setPlayerClass(playerClass);
@@ -70,20 +68,8 @@ public class PlayerServiceImpl implements PlayerService {
             userPlayerInfo.setUpdateTime(LocalDateTime.now());
             userPlayerInfoMapper.insert(userPlayerInfo);
             Long playerId = userPlayerInfo.getId();
-            //创建角色技能组//todo:技能组相关方法解耦
-            List<PlayerActionInfo> playerActionInfoList = new ArrayList<>();
-            for (long i = 1L; i <= 5; i++) {
-                PlayerActionInfo playerActionInfo = new PlayerActionInfo();
-                playerActionInfo.setBattleId(0L);
-                playerActionInfo.setPlayerId(playerId);
-                playerActionInfo.setActionId(i);
-                playerActionInfo.setCurrentCd(0);
-                playerActionInfo.setRestContinueRound(0);
-                playerActionInfo.setCreateTime(LocalDateTime.now());
-                playerActionInfo.setUpdateTime(LocalDateTime.now());
-                playerActionInfoList.add(playerActionInfo);
-            }
-            playerActionInfoMapper.batchInsert(playerActionInfoList);
+
+            actionService.addDefaultAction();
 
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
