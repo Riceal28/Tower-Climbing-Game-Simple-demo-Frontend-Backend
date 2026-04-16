@@ -17,4 +17,13 @@ public enum PlayerClass {
     public String toString(){
         return value;
     }
+
+    public static PlayerClass getByValue(String value) {
+        for (PlayerClass playerClass : values()) {
+            if (playerClass.getValue().equals(value)) {
+                return playerClass;
+            }
+        }
+        throw new BusinessException(ResultCode.BAD_REQUEST,"无效枚举");
+    }
 }
