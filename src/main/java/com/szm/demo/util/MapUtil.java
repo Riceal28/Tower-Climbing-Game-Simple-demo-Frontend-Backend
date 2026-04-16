@@ -1,0 +1,99 @@
+package com.szm.demo.util;
+
+import com.szm.demo.common.BusinessException;
+import com.szm.demo.common.PlayerClass;
+import com.szm.demo.common.ResultCode;
+import com.szm.demo.entity.SaveInfo;
+import com.szm.demo.entity.UserPlayerInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class MapUtil {
+
+    private static final Logger logger = LoggerFactory.getLogger(MapUtil.class);
+
+    public static UserPlayerInfo mapToPlayer(Map<String, Object> map) {
+        if (map.isEmpty()) {
+            logger.error("Map转换角色对象异常:空Map");
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+        UserPlayerInfo userPlayerInfo = new UserPlayerInfo();
+        userPlayerInfo.setId(((Number) map.get("id")).longValue());
+        userPlayerInfo.setUserId(((Number) map.get("userId")).longValue());
+        userPlayerInfo.setPlayerClass(PlayerClass.getByValue((String) map.get("playerClass")));
+        userPlayerInfo.setLevel(((Number) map.get("level")).intValue());
+        userPlayerInfo.setExp(((Number) map.get("exp")).longValue());
+        userPlayerInfo.setAttackBase(((Number) map.get("attackBase")).intValue());
+        userPlayerInfo.setCurrentHp(((Number) map.get("currentHp")).intValue());
+        userPlayerInfo.setCurrentMp(((Number) map.get("currentMp")).intValue());
+        userPlayerInfo.setCreateTime((LocalDateTime) map.get("createTime"));
+        userPlayerInfo.setUpdateTime((LocalDateTime) map.get("updateTime"));
+        return userPlayerInfo;
+    }
+
+    public static Map<String, Object> playerToMap(UserPlayerInfo userPlayerInfo) {
+        if (userPlayerInfo == null) {
+            logger.error("角色对象映射Map异常: 空对象");
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+        Map<String, Object> map = new ConcurrentHashMap<>();
+        map.put("id", userPlayerInfo.getId());
+        map.put("userId", userPlayerInfo.getUserId());
+        map.put("playerClass", userPlayerInfo.getPlayerClass());
+        map.put("level", userPlayerInfo.getLevel());
+        map.put("exp", userPlayerInfo.getExp());
+        map.put("attackBase", userPlayerInfo.getAttackBase());
+        map.put("currentHp", userPlayerInfo.getCurrentHp());
+        map.put("currentMp", userPlayerInfo.getCurrentMp());
+        map.put("createTime", userPlayerInfo.getCreateTime());
+        map.put("updateTime", userPlayerInfo.getUpdateTime());
+        return map;
+    }
+
+    public static SaveInfo mapToSaveInfo(Map<String, Object> map) {
+        if (map.isEmpty()) {
+            logger.error("Map转换存档对象异常:空Map");
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+        SaveInfo saveInfo = new SaveInfo();
+        saveInfo.setId(((Number) map.get("id")).longValue());
+        saveInfo.setUserId(((Number) map.get("userId")).longValue());
+        saveInfo.setPlayerId(((Number) map.get("playerId")).longValue());
+        saveInfo.setLevel(((Number) map.get("level")).intValue());
+        saveInfo.setExp(((Number) map.get("exp")).longValue());
+        saveInfo.setCurrentHp(((Number) map.get("currentHp")).intValue());
+        saveInfo.setCurrentMp(((Number) map.get("currentMp")).intValue());
+        saveInfo.setFloor(((Number) map.get("floor")).intValue());
+        saveInfo.setBattleOrder(((Number) map.get("battleOrder")).intValue());
+        saveInfo.setProgress(((Number) map.get("progress")).intValue());
+        saveInfo.setCreateTime((LocalDateTime) map.get("createTime"));
+        saveInfo.setUpdateTime((LocalDateTime) map.get("updateTime"));
+        return saveInfo;
+    }
+
+    public static Map<String, Object> saveInfoToMap(SaveInfo saveInfo) {
+        if (saveInfo == null) {
+            logger.error("存档对象映射Map异常: 空对象");
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+        Map<String, Object> map = new ConcurrentHashMap<>();
+        map.put("id", saveInfo.getId());
+        map.put("userId", saveInfo.getUserId());
+        map.put("playerId", saveInfo.getPlayerId());
+        map.put("level", saveInfo.getLevel());
+        map.put("exp", saveInfo.getExp());
+        map.put("currentHp", saveInfo.getCurrentHp());
+        map.put("currentMp", saveInfo.getCurrentMp());
+        map.put("floor", saveInfo.getFloor());
+        map.put("battleOrder", saveInfo.getBattleOrder());
+        map.put("progress", saveInfo.getProgress());
+        map.put("createTime", saveInfo.getCreateTime());
+        map.put("updateTime", saveInfo.getUpdateTime());
+        return map;
+    }
+
+}
