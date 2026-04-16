@@ -2,23 +2,14 @@ package com.szm.demo.common;
 
 public enum RedisKeyConstants {
 
-    //    USER_INFO_KEY("userInfo:"),
-//    USER_DETAIL_KEY("userDetail:"),
-//    LEVEL_INFO("levelInfo:"),
-//    SAVE_INFO_KEY("saveInfo:"),
-//    ACTION_INFO("actionInfo:"),
-//    USER_ACTION_INFO_KEY("userActionInfo:"),
-//    MONSTER_INFO("monsterInfo:"),
-//    MONSTER_ACTION_INFO("monsterActionInfo:"),
-//    BATTLE_INFO("battleInfo:");
     USER_INFO("demo:user:info:%s","userId"),
     USER_PLAYER("demo:user:player:%s","playerId"),//todo:改为HASH
+    PLAYER_SHOW("demo:user:player:base:%s","playerId"),
     USER_TOKEN_IN("demo:login:white:%s","JTI"),
     USER_TOKEN_OUT("demo:login:black:%s","JTI"),
     LEVEL_INFO("demo:level:class:%s:s","playerClass, level"),
-    PLAYER_SHOW("demo:user:player:%s","userId"),
     SAVE_LIST("demo:save:list:%s","userId(存存档ID)"),
-    SAVE_DETAIL("demo:save:%s:%s","userId, id"),
+    SAVE_DETAIL("demo:save:%s:%s","userId, saveId"),
     TOWER_BASE("demo:tower:base:%s","floor"),
     TOWER_LIST("demo:tower:list:%s","floor(存order)"),
     TOWER_DETAIL("demo:tower:%s:%s","floor, order"),
