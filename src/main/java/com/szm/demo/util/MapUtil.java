@@ -3,6 +3,7 @@ package com.szm.demo.util;
 import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.PlayerClass;
 import com.szm.demo.common.ResultCode;
+import com.szm.demo.entity.BattleInfo;
 import com.szm.demo.entity.SaveInfo;
 import com.szm.demo.entity.UserPlayerInfo;
 import org.slf4j.Logger;
@@ -93,6 +94,42 @@ public class MapUtil {
         map.put("progress", saveInfo.getProgress());
         map.put("createTime", saveInfo.getCreateTime());
         map.put("updateTime", saveInfo.getUpdateTime());
+        return map;
+    }
+
+    public static BattleInfo mapToBattle(Map<String, Object> map) {
+        if (map.isEmpty()) {
+            logger.error("Map转换战斗信息对象异常:空Map");
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+        BattleInfo battleInfo = new BattleInfo();
+        battleInfo.setId(((Number) map.get("id")).longValue());
+        battleInfo.setSaveId(((Number) map.get("saveId")).longValue());
+        battleInfo.setPlayerCurrentHp(((Number)map.get("playerCurrentHp")).intValue());
+        battleInfo.setPlayerCurrentMp(((Number)map.get("playerCurrentMp")).intValue());
+        battleInfo.setPlayerCurrentDefend(((Number)map.get("playerCurrentDefend")).intValue());
+        battleInfo.setMonsterId(((Number)map.get("monsterId")).longValue());
+        battleInfo.setMonsterCurrentHp(((Number) map.get("monsterCurrentHp")).intValue());
+        battleInfo.setMonsterCurrentMp(((Number)map.get("monsterCurrentMp")).intValue());
+        battleInfo.setMonsterCurrentDefend(((Number) map.get("monsterCurrentDefend")).intValue());
+        battleInfo.setCreateTime((LocalDateTime) map.get("createTime"));
+        battleInfo.setUpdateTime((LocalDateTime) map.get("updateTime"));
+        return battleInfo;
+    }
+
+    public static Map<String,Object> battleToMap(BattleInfo battleInfo){
+        Map<String, Object> map = new ConcurrentHashMap<>();
+        map.put("id",battleInfo.getId());
+        map.put("saveId",battleInfo.getSaveId());
+        map.put("playerCurrentHp",battleInfo.getPlayerCurrentHp());
+        map.put("playerCurrentMp",battleInfo.getPlayerCurrentMp());
+        map.put("playerCurrentDefend",battleInfo.getPlayerCurrentDefend());
+        map.put("monsterId",battleInfo.getMonsterId());
+        map.put("monsterCurrentHp",battleInfo.getMonsterCurrentHp());
+        map.put("monsterCurrentMp",battleInfo.getMonsterCurrentMp());
+        map.put("monsterCurrentDefend",battleInfo.getPlayerCurrentDefend());
+        map.put("createTime",battleInfo.getCreateTime());
+        map.put("updateTime",battleInfo.getUpdateTime());
         return map;
     }
 

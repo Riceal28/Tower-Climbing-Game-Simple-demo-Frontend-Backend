@@ -15,10 +15,11 @@ public class GameContextFilter implements Filter {
             Long userId = Long.parseLong(request.getHeader("X-User-Id"));
             Long playerId = Long.parseLong(request.getHeader("X-Player-Id"));
             Long saveId = Long.parseLong(request.getHeader("X-Save-Id"));
-            if (userId != null && playerId != null &&saveId!=null){
-                GameContext.init(userId,playerId,saveId);
+            Long battleId = Long.parseLong(request.getHeader("X-Battle-Id"));
+            if (userId != null) {
+                GameContext.init(userId, playerId, saveId,battleId);
             }
-            chain.doFilter(request,servletResponse);
+            chain.doFilter(request, servletResponse);
         } finally {
             GameContext.clear();
         }

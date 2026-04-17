@@ -2,6 +2,7 @@ package com.szm.demo.common;
 
 public enum RedisKeyConstants {
 
+    //todo:简化Key
     USER_INFO("demo:user:info:%s","userId"),
     USER_PLAYER("demo:user:player:%s","playerId"),
     PLAYER_SHOW("demo:user:player:base:%s","playerId"),
@@ -10,13 +11,14 @@ public enum RedisKeyConstants {
     LEVEL_INFO("demo:level:class:%s:s","playerClass, level"),
     SAVE_LIST("demo:save:list:%s","userId(存存档ID)"),
     SAVE_DETAIL("demo:save:%s:%s","userId, saveId"),
-    ACTION_INFO("demo:action:info:s","actionId"),
+    ACTION_INFO("demo:action:s","actionId"),
     PLAYER_ACTION("demo:player:%s:action:%s","playerId, actionId"),
     MONSTER_ACTION("demo:monster:%s:action:%s","monsterId, actionId"),
     TOWER_BASE("demo:tower:base:%s","floor"),
     TOWER_LIST("demo:tower:list:%s","floor(存order)"),
     TOWER_DETAIL("demo:tower:%s:%s","floor, order"),
-    MONSTER_INFO("demo:monster:info:%s","monsterId");
+    MONSTER_INFO("demo:monster:%s","monsterId"),
+    BATTLE_INFO("demo:battle:%s","saveId");
 
     private final String key;
     private final String useBy;

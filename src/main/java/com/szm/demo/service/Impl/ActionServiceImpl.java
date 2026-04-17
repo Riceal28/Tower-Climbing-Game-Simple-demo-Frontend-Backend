@@ -79,17 +79,18 @@ public class ActionServiceImpl implements ActionService {
             ActionInfo actionInfo = redisUtil.get(key, ActionInfo.class);
             if (actionInfo == null) {
                 actionInfo = actionInfoMapper.getByAId(actionId);
-                if(actionInfo==null){
-                    throw new BusinessException(ResultCode.NOT_FOUND,"未配置该技能");
+                if (actionInfo == null) {
+                    throw new BusinessException(ResultCode.NOT_FOUND, "未配置该技能");
                 }
-                redisUtil.set(key,actionInfo);
+                redisUtil.set(key, actionInfo);
             }
             return actionInfo;
-        } catch (BusinessException e){
+        } catch (BusinessException e) {
             throw e;
-        } catch (Exception e){
-            logger.error("查询技能ID[{}]失败",actionId,e);
+        } catch (Exception e) {
+            logger.error("查询技能ID[{}]失败", actionId, e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
     }
+
 }

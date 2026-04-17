@@ -5,11 +5,10 @@ import java.time.LocalDateTime;
 public class BattleInfo {
     private Long id;
     private Long saveId;
-    private Long userId;
     private Long monsterId;
-    private Integer userCurrentHp;
-    private Integer userCurrentMp;
-    private Integer userCurrentDefend;
+    private Integer playerCurrentHp;
+    private Integer playerCurrentMp;
+    private Integer playerCurrentDefend;
     private Integer monsterCurrentHp;
     private Integer monsterCurrentMp;
     private Integer monsterCurrentDefend;
@@ -35,14 +34,6 @@ public class BattleInfo {
         this.saveId = saveId;
     }
 
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
     public Long getMonsterId() {
         return monsterId;
     }
@@ -51,28 +42,28 @@ public class BattleInfo {
         this.monsterId = monsterId;
     }
 
-    public Integer getUserCurrentHp() {
-        return userCurrentHp;
+    public Integer getPlayerCurrentHp() {
+        return playerCurrentHp;
     }
 
-    public void setUserCurrentHp(Integer userCurrentHp) {
-        this.userCurrentHp = userCurrentHp;
+    public void setPlayerCurrentHp(Integer playerCurrentHp) {
+        this.playerCurrentHp = playerCurrentHp;
     }
 
-    public Integer getUserCurrentMp() {
-        return userCurrentMp;
+    public Integer getPlayerCurrentMp() {
+        return playerCurrentMp;
     }
 
-    public void setUserCurrentMp(Integer userCurrentMp) {
-        this.userCurrentMp = userCurrentMp;
+    public void setPlayerCurrentMp(Integer playerCurrentMp) {
+        this.playerCurrentMp = playerCurrentMp;
     }
 
-    public Integer getUserCurrentDefend() {
-        return userCurrentDefend;
+    public Integer getPlayerCurrentDefend() {
+        return playerCurrentDefend;
     }
 
-    public void setUserCurrentDefend(Integer userCurrentDefend) {
-        this.userCurrentDefend = userCurrentDefend;
+    public void setPlayerCurrentDefend(Integer playerCurrentDefend) {
+        this.playerCurrentDefend = playerCurrentDefend;
     }
 
     public Integer getMonsterCurrentHp() {
@@ -118,8 +109,8 @@ public class BattleInfo {
     @Override
     public String toString() {
         return String.format(
-                "BattleInfo[id=%s, saveId=%s, userId=%s, monsterId=%s, userCurrentHp=%s, userCurrentMp=%s, userCurrentDefend=%s, monsterCurrentHp=%s, monsterCurrentMp=%s, monsterCurrentDefend=%s, createTime=%s, updateTime=%s]",
-                getId(), getSaveId(), getUserId(), getMonsterId(), getUserCurrentHp(), getUserCurrentMp(), getUserCurrentDefend(),
+                "BattleInfo[id=%s, saveId=%s, monsterId=%s, playerCurrentHp=%s, playerCurrentMp=%s, playerCurrentDefend=%s, monsterCurrentHp=%s, monsterCurrentMp=%s, monsterCurrentDefend=%s, createTime=%s, updateTime=%s]",
+                getId(), getSaveId(), getMonsterId(), getPlayerCurrentHp(), getPlayerCurrentMp(), getPlayerCurrentDefend(),
                 getMonsterCurrentHp(), getMonsterCurrentMp(), getMonsterCurrentDefend(), getCreateTime(), getUpdateTime()
         );
     }

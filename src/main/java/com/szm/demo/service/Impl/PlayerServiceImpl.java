@@ -7,11 +7,8 @@ import com.szm.demo.common.ResultCode;
 import com.szm.demo.context.GameContext;
 import com.szm.demo.dto.PlayerShowResp;
 import com.szm.demo.entity.LevelInfo;
-import com.szm.demo.entity.PlayerActionInfo;
 import com.szm.demo.entity.SaveInfo;
 import com.szm.demo.entity.UserPlayerInfo;
-import com.szm.demo.mapper.LevelInfoMapper;
-import com.szm.demo.mapper.PlayerActionInfoMapper;
 import com.szm.demo.mapper.UserPlayerInfoMapper;
 import com.szm.demo.service.ActionService;
 import com.szm.demo.service.LevelService;
@@ -25,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -55,7 +53,7 @@ public class PlayerServiceImpl implements PlayerService {
             throw new BusinessException(ResultCode.PRECONDITION_FAILED);
         }
         try {
-            LevelInfo levelInfo = levelService.getLevelInfo(playerClass,1);
+            LevelInfo levelInfo = levelService.getLevelInfo(playerClass, 1);
             UserPlayerInfo userPlayerInfo = new UserPlayerInfo();
             userPlayerInfo.setUserId(userId);
             userPlayerInfo.setPlayerClass(playerClass);
@@ -95,16 +93,18 @@ public class PlayerServiceImpl implements PlayerService {
             throw new BusinessException(ResultCode.PRECONDITION_FAILED);
         }
         String key = RedisKeyConstants.USER_PLAYER.getKey(playerId);
-        UserPlayerInfo userPlayerInfo = MapUtil.mapToPlayer(redisUtil.hashEntries(key, Object.class));
-        if (userPlayerInfo == null) {
-            userPlayerInfo = userPlayerInfoMapper.getById(playerId);
-            if (userPlayerInfo == null) {
-                logger.error("用户角色信息不存在");
-                throw new BusinessException(ResultCode.NOT_FOUND, "角色不存在");
-            }
-            Map<String, Object> map = MapUtil.playerToMap(userPlayerInfo);
-            redisUtil.hashPutAll(key,map);
+        Map<String, Object> map = redisUtil.hashEntries(key, Object.class);
+        if (!CollectionUtils.isEmpty(map)) {
+            return MapUtil.mapToPlayer(map);
         }
+        UserPlayerInfo userPlayerInfo = userPlayerInfoMapper.getById(playerId);
+        if (userPlayerInfo == null) {
+            logger.error("用户角色信息不存在");
+            throw new BusinessException(ResultCode.NOT_FOUND, "角色不存在");
+        }
+        Map<String, Object> map2 = MapUtil.playerToMap(userPlayerInfo);
+        redisUtil.hashPutAll(key, map2);
+
         logger.info("查询了一次用户角色详情");
         return userPlayerInfo;
     }
@@ -130,7 +130,7 @@ public class PlayerServiceImpl implements PlayerService {
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            Map<String,Object> map = MapUtil.playerToMap(userPlayerInfo);
+                            Map<String, Object> map = MapUtil.playerToMap(userPlayerInfo);
                             redisUtil.hashPutAll(key, map);
                         }
                     }
@@ -141,6 +141,7 @@ public class PlayerServiceImpl implements PlayerService {
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
     }
+
     @Override
     @Transactional
     public void updatePlayerBySave(SaveInfo saveInfo) {
@@ -197,8 +198,8 @@ public class PlayerServiceImpl implements PlayerService {
     public void resetPlayer(Long playerId) {
         Long userId = GameContext.getUserId();
         UserPlayerInfo userPlayerInfo = getPlayerInfo();
-        if(!Objects.equals(userPlayerInfo.getUserId(), userId)){
-            throw new BusinessException(ResultCode.UNAUTHORIZED,"非法操作");
+        if (!Objects.equals(userPlayerInfo.getUserId(), userId)) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED, "非法操作");
         }
         LevelInfo levelInfo = levelService.getLevelInfo(userPlayerInfo.getPlayerClass(), 1);
         userPlayerInfo.setExp(0L);
