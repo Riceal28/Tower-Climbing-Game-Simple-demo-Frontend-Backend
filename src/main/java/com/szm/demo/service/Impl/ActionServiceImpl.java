@@ -9,6 +9,7 @@ import com.szm.demo.entity.PlayerActionInfo;
 import com.szm.demo.mapper.ActionInfoMapper;
 import com.szm.demo.mapper.PlayerActionInfoMapper;
 import com.szm.demo.service.ActionService;
+import com.szm.demo.util.MapUtil;
 import com.szm.demo.util.RedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,9 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ActionServiceImpl implements ActionService {
@@ -40,6 +43,10 @@ public class ActionServiceImpl implements ActionService {
     @Transactional
     public void addDefaultAction() {
         Long playerId = GameContext.getPlayerId();
+        Long saveId = GameContext.getSaveId();
+        if (playerId == null || saveId == null) {
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
         List<PlayerActionInfo> playerActionInfoList = new ArrayList<>();
         for (long i = 1L; i <= 5; i++) {
             PlayerActionInfo playerActionInfo = new PlayerActionInfo();
@@ -59,9 +66,8 @@ public class ActionServiceImpl implements ActionService {
                         @Override
                         public void afterCommit() {
                             for (PlayerActionInfo p : playerActionInfoList) {
-                                //todo: 缓存键有待重新考量
-                                String key = RedisKeyConstants.PLAYER_ACTION.getKey(playerId, p.getId());
-                                redisUtil.set(key, p);
+                                String key = RedisKeyConstants.PLAYER_ACTION.getKey(playerId, saveId, p.getId());
+                                redisUtil.hashPutAll(key, MapUtil.paToMap(p));//todo设置过期时间
                             }
                         }
                     }
@@ -73,7 +79,7 @@ public class ActionServiceImpl implements ActionService {
     }
 
     @Override
-    public ActionInfo getByAId(Long actionId) {
+    public ActionInfo getActionByAId(Long actionId) {
         try {
             String key = RedisKeyConstants.ACTION_INFO.getKey(actionId);
             ActionInfo actionInfo = redisUtil.get(key, ActionInfo.class);
@@ -93,4 +99,99 @@ public class ActionServiceImpl implements ActionService {
         }
     }
 
+
+
+    @Override
+    @Transactional
+    public void updatePaOne(PlayerActionInfo p) {
+        Long playerId = GameContext.getPlayerId();
+        Long saveId = GameContext.getSaveId();
+        if (playerId == null || saveId == null) {
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
+        if (p == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        try {
+            playerActionInfoMapper.updateOne(p);
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            String key = RedisKeyConstants.PLAYER_ACTION.getKey(playerId, saveId, p.getId());
+                            Map<String, Object> map = new HashMap<>();
+                            map.put("currentCd", p.getCurrentCd());
+                            map.put("restContinueRound", p.getRestContinueRound());
+                            map.put("updateTime", p.getUpdateTime());
+                            redisUtil.hashPutAll(key, map);
+                        }
+                    }
+            );
+        } catch (Exception e) {
+            logger.error("更新角色技能情况失败,存档ID[{}]", saveId, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updatePaAll(List<PlayerActionInfo> list) {
+        Long playerId = GameContext.getPlayerId();
+        Long saveId = GameContext.getSaveId();
+        if (playerId == null || saveId == null) {
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
+        if (list.isEmpty()) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        try {
+            playerActionInfoMapper.updateBatch(list);
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            Map<String, Object> batch = new HashMap<>();
+                            String key = RedisKeyConstants.PLAYER_ACTION.getKey(playerId, saveId);
+                            for (PlayerActionInfo p : list) {
+                                Map<String, Object> map = new HashMap<>();
+                                map.put("currentCd", p.getCurrentCd());
+                                map.put("restContinueRound", p.getRestContinueRound());
+                                map.put("updateTime", p.getUpdateTime());
+                                batch.put(p.getId().toString(), map);
+                            }
+                            redisUtil.hashPutAll(key, batch);
+                        }
+                    }
+            );
+        } catch (Exception e) {
+            logger.error("批量更新角色技能情况失败,存档ID[{}]", saveId, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void passRoundOneUpdate(PlayerActionInfo playerActionInfo) {
+        if (playerActionInfo == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        int currentCd = playerActionInfo.getCurrentCd();
+        int restRound = playerActionInfo.getRestContinueRound();
+        playerActionInfo.setCurrentCd(Math.max(0, currentCd - 1));
+        playerActionInfo.setRestContinueRound(Math.max(0, restRound - 1));
+        updatePaOne(playerActionInfo);
+    }
+
+    @Override
+    @Transactional
+    public void passRoundAllUpdate(List<PlayerActionInfo> list) {
+        if (list.isEmpty()) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        for (PlayerActionInfo p : list) {
+            p.setCurrentCd(Math.max(0, p.getCurrentCd() - 1));
+            p.setRestContinueRound(Math.max(0, p.getRestContinueRound() - 1));
+        }
+        updatePaAll(list);
+    }
 }

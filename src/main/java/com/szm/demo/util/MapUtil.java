@@ -4,14 +4,15 @@ import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.PlayerClass;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.entity.BattleInfo;
+import com.szm.demo.entity.PlayerActionInfo;
 import com.szm.demo.entity.SaveInfo;
 import com.szm.demo.entity.UserPlayerInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class MapUtil {
 
@@ -41,7 +42,7 @@ public class MapUtil {
             logger.error("角色对象映射Map异常: 空对象");
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
-        Map<String, Object> map = new ConcurrentHashMap<>();
+        Map<String, Object> map = new HashMap<>();
         map.put("id", userPlayerInfo.getId());
         map.put("userId", userPlayerInfo.getUserId());
         map.put("playerClass", userPlayerInfo.getPlayerClass());
@@ -81,7 +82,7 @@ public class MapUtil {
             logger.error("存档对象映射Map异常: 空对象");
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
-        Map<String, Object> map = new ConcurrentHashMap<>();
+        Map<String, Object> map = new HashMap<>();
         map.put("id", saveInfo.getId());
         map.put("userId", saveInfo.getUserId());
         map.put("playerId", saveInfo.getPlayerId());
@@ -105,31 +106,69 @@ public class MapUtil {
         BattleInfo battleInfo = new BattleInfo();
         battleInfo.setId(((Number) map.get("id")).longValue());
         battleInfo.setSaveId(((Number) map.get("saveId")).longValue());
-        battleInfo.setPlayerCurrentHp(((Number)map.get("playerCurrentHp")).intValue());
-        battleInfo.setPlayerCurrentMp(((Number)map.get("playerCurrentMp")).intValue());
-        battleInfo.setPlayerCurrentDefend(((Number)map.get("playerCurrentDefend")).intValue());
-        battleInfo.setMonsterId(((Number)map.get("monsterId")).longValue());
+        battleInfo.setPlayerCurrentHp(((Number) map.get("playerCurrentHp")).intValue());
+        battleInfo.setPlayerCurrentMp(((Number) map.get("playerCurrentMp")).intValue());
+        battleInfo.setPlayerCurrentDefend(((Number) map.get("playerCurrentDefend")).intValue());
+        battleInfo.setMonsterId(((Number) map.get("monsterId")).longValue());
         battleInfo.setMonsterCurrentHp(((Number) map.get("monsterCurrentHp")).intValue());
-        battleInfo.setMonsterCurrentMp(((Number)map.get("monsterCurrentMp")).intValue());
+        battleInfo.setMonsterCurrentMp(((Number) map.get("monsterCurrentMp")).intValue());
         battleInfo.setMonsterCurrentDefend(((Number) map.get("monsterCurrentDefend")).intValue());
         battleInfo.setCreateTime((LocalDateTime) map.get("createTime"));
         battleInfo.setUpdateTime((LocalDateTime) map.get("updateTime"));
         return battleInfo;
     }
 
-    public static Map<String,Object> battleToMap(BattleInfo battleInfo){
-        Map<String, Object> map = new ConcurrentHashMap<>();
-        map.put("id",battleInfo.getId());
-        map.put("saveId",battleInfo.getSaveId());
-        map.put("playerCurrentHp",battleInfo.getPlayerCurrentHp());
-        map.put("playerCurrentMp",battleInfo.getPlayerCurrentMp());
-        map.put("playerCurrentDefend",battleInfo.getPlayerCurrentDefend());
-        map.put("monsterId",battleInfo.getMonsterId());
-        map.put("monsterCurrentHp",battleInfo.getMonsterCurrentHp());
-        map.put("monsterCurrentMp",battleInfo.getMonsterCurrentMp());
-        map.put("monsterCurrentDefend",battleInfo.getPlayerCurrentDefend());
-        map.put("createTime",battleInfo.getCreateTime());
-        map.put("updateTime",battleInfo.getUpdateTime());
+    public static Map<String, Object> battleToMap(BattleInfo battleInfo) {
+        if (battleInfo == null) {
+            logger.error("战斗信息对象映射Map异常:空对象");
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", battleInfo.getId());
+        map.put("saveId", battleInfo.getSaveId());
+        map.put("playerCurrentHp", battleInfo.getPlayerCurrentHp());
+        map.put("playerCurrentMp", battleInfo.getPlayerCurrentMp());
+        map.put("playerCurrentDefend", battleInfo.getPlayerCurrentDefend());
+        map.put("monsterId", battleInfo.getMonsterId());
+        map.put("monsterCurrentHp", battleInfo.getMonsterCurrentHp());
+        map.put("monsterCurrentMp", battleInfo.getMonsterCurrentMp());
+        map.put("monsterCurrentDefend", battleInfo.getPlayerCurrentDefend());
+        map.put("createTime", battleInfo.getCreateTime());
+        map.put("updateTime", battleInfo.getUpdateTime());
+        return map;
+    }
+
+    public static PlayerActionInfo mapToPa(Map<String, Object> map) {
+        if (map.isEmpty()) {
+            logger.error("Map转换角色技能对象异常:空Map");
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+        PlayerActionInfo playerActionInfo = new PlayerActionInfo();
+        playerActionInfo.setId(((Number) map.get("id")).longValue());
+        playerActionInfo.setBattleId(((Number) map.get("battleId")).longValue());
+        playerActionInfo.setPlayerId(((Number) map.get("playerId")).longValue());
+        playerActionInfo.setActionId(((Number) map.get("actionId")).longValue());
+        playerActionInfo.setCurrentCd(((Number) map.get("currentCd")).intValue());
+        playerActionInfo.setRestContinueRound(((Number) map.get("restContinueRound")).intValue());
+        playerActionInfo.setCreateTime((LocalDateTime) map.get("createTime"));
+        playerActionInfo.setUpdateTime((LocalDateTime) map.get("updateTime"));
+        return playerActionInfo;
+    }
+
+    public static Map<String, Object> paToMap(PlayerActionInfo playerActionInfo) {
+        if (playerActionInfo == null) {
+            logger.error("角色技能对象映射Map异常:空对象");
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", playerActionInfo.getId());
+        map.put("battleId", playerActionInfo.getBattleId());
+        map.put("playerId", playerActionInfo.getPlayerId());
+        map.put("actionId", playerActionInfo.getActionId());
+        map.put("currentCd", playerActionInfo.getCurrentCd());
+        map.put("restContinueRound", playerActionInfo.getRestContinueRound());
+        map.put("createTime", playerActionInfo.getCreateTime());
+        map.put("updateTime", playerActionInfo.getUpdateTime());
         return map;
     }
 

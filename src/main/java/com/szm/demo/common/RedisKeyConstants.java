@@ -12,7 +12,7 @@ public enum RedisKeyConstants {
     SAVE_LIST("demo:save:list:%s","userId(存存档ID)"),
     SAVE_DETAIL("demo:save:%s:%s","userId, saveId"),
     ACTION_INFO("demo:action:s","actionId"),
-    PLAYER_ACTION("demo:player:%s:action:%s","playerId, actionId"),
+    PLAYER_ACTION("demo:player:%s:save:%s:%s","playerId, saveId, id(非actionId)"),
     MONSTER_ACTION("demo:monster:%s:action:%s","monsterId, actionId"),
     TOWER_BASE("demo:tower:base:%s","floor"),
     TOWER_LIST("demo:tower:list:%s","floor(存order)"),

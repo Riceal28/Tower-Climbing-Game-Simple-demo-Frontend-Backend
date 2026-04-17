@@ -5,6 +5,7 @@ import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.context.GameContext;
 import com.szm.demo.entity.BattleInfo;
+import com.szm.demo.entity.MonsterInfo;
 import com.szm.demo.entity.SaveInfo;
 import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.mapper.BattleInfoMapper;
@@ -40,34 +41,9 @@ public class BattleServiceImpl implements BattleService {
     @Autowired
     private RedisUtil redisUtil;
 
-    @Override//todo: 设置过期时间
-    public BattleInfo getBySaveId() {
-        Long saveId = GameContext.getSaveId();
-        if (saveId == null) {
-            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
-        }
-        try {
-            String key = RedisKeyConstants.BATTLE_INFO.getKey(saveId);
-            Map<String, Object> map = redisUtil.hashEntries(key, Object.class);
-            if (!CollectionUtils.isEmpty(map)) {
-                return MapUtil.mapToBattle(map);
-            }
-            BattleInfo battleInfo = battleInfoMapper.getBySaveId(saveId);
-            //允许NULL
-            if (battleInfo != null) {
-                map = MapUtil.battleToMap(battleInfo);
-                redisUtil.hashPutAll(key, map);
-            }
-            return battleInfo;
-        } catch (Exception e) {
-            logger.error("查询战斗信息失败,存档ID[{}]", saveId, e);
-            throw new BusinessException(ResultCode.SYSTEM_ERROR);
-        }
-    }
-
     @Override
     @Transactional
-    public BattleInfo addBySave(SaveInfo saveInfo) {
+    public BattleInfo create(SaveInfo saveInfo) {
         if (saveInfo == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
@@ -100,9 +76,39 @@ public class BattleServiceImpl implements BattleService {
         }
     }
 
+    @Override//todo: 设置过期时间
+    public BattleInfo getBySaveId() {
+        Long saveId = GameContext.getSaveId();
+        if (saveId == null) {
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
+        try {
+            String key = RedisKeyConstants.BATTLE_INFO.getKey(saveId);
+            Map<String, Object> map = redisUtil.hashEntries(key, Object.class);
+            if (!CollectionUtils.isEmpty(map)) {
+                return MapUtil.mapToBattle(map);
+            }
+            BattleInfo battleInfo = battleInfoMapper.getBySaveId(saveId);
+            //允许NULL
+            if (battleInfo != null) {
+                map = MapUtil.battleToMap(battleInfo);
+                redisUtil.hashPutAll(key, map);
+            }
+            return battleInfo;
+        } catch (Exception e) {
+            logger.error("查询战斗信息失败,存档ID[{}]", saveId, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+    }
+
     @Override
-    public BattleInfo loadFromSave(BattleInfo battleInfo, SaveInfo saveInfo) {
-        if (battleInfo == null || saveInfo == null) {
+    public BattleInfo convertFromSave(SaveInfo saveInfo) {
+        if (saveInfo == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        BattleInfo battleInfo = getBySaveId();
+        if (battleInfo == null) {
+            logger.error("需要先创建战斗信息");
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
         if (!Objects.equals(battleInfo.getSaveId(), saveInfo.getId())) {
@@ -120,7 +126,7 @@ public class BattleServiceImpl implements BattleService {
     }
 
     @Override
-    public void updateByBattle(BattleInfo battleInfo) {
+    public void updateBattle(BattleInfo battleInfo) {
         if (battleInfo == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
@@ -138,25 +144,6 @@ public class BattleServiceImpl implements BattleService {
             );
         } catch (Exception e) {
             logger.error("更新战斗信息失败,战斗ID[{}]", battleInfo.getId(), e);
-            throw new BusinessException(ResultCode.SYSTEM_ERROR);
-        }
-    }
-
-    @Override
-    @Transactional
-    public void battleInit() {
-        Long saveId = GameContext.getSaveId();
-        Long battleId = GameContext.getBattleId();
-        if (saveId == null) {
-            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
-        }
-        try {
-            SaveInfo saveInfo = saveService.getSaveById();
-            UserPlayerInfo userPlayerInfo = playerService.getPlayerInfo();
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            logger.error("存档ID[{}]初始化战斗失败", saveId, e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
     }
