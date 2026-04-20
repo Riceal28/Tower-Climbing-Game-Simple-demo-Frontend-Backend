@@ -3,10 +3,7 @@ package com.szm.demo.util;
 import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.PlayerClass;
 import com.szm.demo.common.ResultCode;
-import com.szm.demo.entity.BattleInfo;
-import com.szm.demo.entity.PlayerActionInfo;
-import com.szm.demo.entity.SaveInfo;
-import com.szm.demo.entity.UserPlayerInfo;
+import com.szm.demo.entity.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -169,6 +166,41 @@ public class MapUtil {
         map.put("restContinueRound", playerActionInfo.getRestContinueRound());
         map.put("createTime", playerActionInfo.getCreateTime());
         map.put("updateTime", playerActionInfo.getUpdateTime());
+        return map;
+    }
+
+    //todo:提取公共方法
+    public static MonsterActionInfo mapToMa(Map<String, Object> map) {
+        if (map.isEmpty()) {
+            logger.error("Map转换魔物技能对象异常:空Map");
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+        MonsterActionInfo monsterActionInfo = new MonsterActionInfo();
+        monsterActionInfo.setId(((Number) map.get("id")).longValue());
+        monsterActionInfo.setBattleId(((Number) map.get("battleId")).longValue());
+        monsterActionInfo.setMonsterId(((Number) map.get("monsterId")).longValue());
+        monsterActionInfo.setActionId(((Number) map.get("actionId")).longValue());
+        monsterActionInfo.setCurrentCd(((Number) map.get("currentCd")).intValue());
+        monsterActionInfo.setRestContinueRound(((Number) map.get("restContinueRound")).intValue());
+        monsterActionInfo.setCreateTime((LocalDateTime) map.get("createTime"));
+        monsterActionInfo.setUpdateTime((LocalDateTime) map.get("updateTime"));
+        return monsterActionInfo;
+    }
+
+    public static Map<String, Object> maToMap(MonsterActionInfo monsterActionInfo) {
+        if (monsterActionInfo == null) {
+            logger.error("魔物技能对象映射Map异常:空对象");
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", monsterActionInfo.getId());
+        map.put("battleId", monsterActionInfo.getBattleId());
+        map.put("monsterId", monsterActionInfo.getMonsterId());
+        map.put("actionId", monsterActionInfo.getActionId());
+        map.put("currentCd", monsterActionInfo.getCurrentCd());
+        map.put("restContinueRound", monsterActionInfo.getRestContinueRound());
+        map.put("createTime", monsterActionInfo.getCreateTime());
+        map.put("updateTime", monsterActionInfo.getUpdateTime());
         return map;
     }
 

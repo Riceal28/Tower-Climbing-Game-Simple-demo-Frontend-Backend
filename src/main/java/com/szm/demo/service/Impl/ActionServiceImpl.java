@@ -5,8 +5,10 @@ import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.context.GameContext;
 import com.szm.demo.entity.ActionInfo;
+import com.szm.demo.entity.MonsterActionInfo;
 import com.szm.demo.entity.PlayerActionInfo;
 import com.szm.demo.mapper.ActionInfoMapper;
+import com.szm.demo.mapper.MonsterActionInfoMapper;
 import com.szm.demo.mapper.PlayerActionInfoMapper;
 import com.szm.demo.service.ActionService;
 import com.szm.demo.util.MapUtil;
@@ -20,10 +22,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class ActionServiceImpl implements ActionService {
@@ -38,13 +37,16 @@ public class ActionServiceImpl implements ActionService {
 
     @Autowired
     private RedisUtil redisUtil;
+    @Autowired
+    private MonsterActionInfoMapper monsterActionInfoMapper;
 
     @Override
     @Transactional
     public void addDefaultAction() {
         Long playerId = GameContext.getPlayerId();
         Long saveId = GameContext.getSaveId();
-        if (playerId == null || saveId == null) {
+        Long battleId = GameContext.getBattleId();
+        if (playerId == null || saveId == null || battleId == null) {
             throw new BusinessException(ResultCode.PRECONDITION_FAILED);
         }
         List<PlayerActionInfo> playerActionInfoList = new ArrayList<>();
@@ -65,10 +67,13 @@ public class ActionServiceImpl implements ActionService {
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
+                            Map<String, Object> batch = new HashMap<>();
+                            String key = RedisKeyConstants.PLAYER_ACTION.getKey(battleId);
                             for (PlayerActionInfo p : playerActionInfoList) {
-                                String key = RedisKeyConstants.PLAYER_ACTION.getKey(playerId, saveId, p.getId());
-                                redisUtil.hashPutAll(key, MapUtil.paToMap(p));//todo设置过期时间
+                                Map<String, Object> map = MapUtil.paToMap(p);
+                                batch.put(p.getId().toString(), map);
                             }
+                            redisUtil.hashPutAll(key, batch);
                         }
                     }
             );
@@ -99,14 +104,42 @@ public class ActionServiceImpl implements ActionService {
         }
     }
 
+    @Override
+    public PlayerActionInfo getPaById(Long id) {
+        Long battleId = GameContext.getBattleId();
+        if (battleId == null) {
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
+        if (id == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        try {
+            String key = RedisKeyConstants.PLAYER_ACTION.getKey(battleId);
+            Map<String, Object> map = redisUtil.hashGet(key, id.toString(), Map.class);
+            if (!map.isEmpty()) {
+                return MapUtil.mapToPa(map);
+            }
+            PlayerActionInfo pa = playerActionInfoMapper.getById(id);
+            if (pa == null) {
+                throw new BusinessException(ResultCode.NOT_FOUND);
+            }
+            map = MapUtil.paToMap(pa);
+            redisUtil.hashPut(key, id.toString(), map);
+            return pa;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error("查询角色技能ID[{}]失败", id, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+    }
 
 
     @Override
     @Transactional
     public void updatePaOne(PlayerActionInfo p) {
-        Long playerId = GameContext.getPlayerId();
-        Long saveId = GameContext.getSaveId();
-        if (playerId == null || saveId == null) {
+        Long battleId = GameContext.getBattleId();
+        if (battleId == null) {
             throw new BusinessException(ResultCode.PRECONDITION_FAILED);
         }
         if (p == null) {
@@ -118,17 +151,17 @@ public class ActionServiceImpl implements ActionService {
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            String key = RedisKeyConstants.PLAYER_ACTION.getKey(playerId, saveId, p.getId());
+                            String key = RedisKeyConstants.PLAYER_ACTION.getKey(battleId);
                             Map<String, Object> map = new HashMap<>();
                             map.put("currentCd", p.getCurrentCd());
                             map.put("restContinueRound", p.getRestContinueRound());
                             map.put("updateTime", p.getUpdateTime());
-                            redisUtil.hashPutAll(key, map);
+                            redisUtil.hashPut(key, p.getId().toString(), map);
                         }
                     }
             );
         } catch (Exception e) {
-            logger.error("更新角色技能情况失败,存档ID[{}]", saveId, e);
+            logger.error("更新角色技能情况失败,战斗ID[{}]", battleId, e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
     }
@@ -136,9 +169,8 @@ public class ActionServiceImpl implements ActionService {
     @Override
     @Transactional
     public void updatePaAll(List<PlayerActionInfo> list) {
-        Long playerId = GameContext.getPlayerId();
-        Long saveId = GameContext.getSaveId();
-        if (playerId == null || saveId == null) {
+        Long battleId = GameContext.getBattleId();
+        if (battleId == null) {
             throw new BusinessException(ResultCode.PRECONDITION_FAILED);
         }
         if (list.isEmpty()) {
@@ -151,7 +183,7 @@ public class ActionServiceImpl implements ActionService {
                         @Override
                         public void afterCommit() {
                             Map<String, Object> batch = new HashMap<>();
-                            String key = RedisKeyConstants.PLAYER_ACTION.getKey(playerId, saveId);
+                            String key = RedisKeyConstants.PLAYER_ACTION.getKey(battleId);
                             for (PlayerActionInfo p : list) {
                                 Map<String, Object> map = new HashMap<>();
                                 map.put("currentCd", p.getCurrentCd());
@@ -164,14 +196,14 @@ public class ActionServiceImpl implements ActionService {
                     }
             );
         } catch (Exception e) {
-            logger.error("批量更新角色技能情况失败,存档ID[{}]", saveId, e);
+            logger.error("批量更新角色技能情况失败,战斗ID[{}]", battleId, e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
     }
 
     @Override
     @Transactional
-    public void passRoundOneUpdate(PlayerActionInfo playerActionInfo) {
+    public void passRoundOnePaUpdate(PlayerActionInfo playerActionInfo) {
         if (playerActionInfo == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
@@ -184,7 +216,7 @@ public class ActionServiceImpl implements ActionService {
 
     @Override
     @Transactional
-    public void passRoundAllUpdate(List<PlayerActionInfo> list) {
+    public void passRoundAllPaUpdate(List<PlayerActionInfo> list) {
         if (list.isEmpty()) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
@@ -193,5 +225,129 @@ public class ActionServiceImpl implements ActionService {
             p.setRestContinueRound(Math.max(0, p.getRestContinueRound() - 1));
         }
         updatePaAll(list);
+    }
+
+    //todo:提取公共方法
+    @Override
+    public MonsterActionInfo getMaById(Long id) {
+        Long battleId = GameContext.getBattleId();
+        if (battleId == null) {
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
+        if (id == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        try {
+            String key = RedisKeyConstants.MONSTER_ACTION.getKey(battleId);
+            Map<String, Object> map = redisUtil.hashGet(key, id.toString(), Map.class);
+            if (!map.isEmpty()) {
+                return MapUtil.mapToMa(map);
+            }
+            MonsterActionInfo ma = monsterActionInfoMapper.getById(id);
+            if (ma == null) {
+                throw new BusinessException(ResultCode.NOT_FOUND);
+            }
+            map = MapUtil.maToMap(ma);
+            redisUtil.hashPut(key, id.toString(), map);
+            return ma;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error("查询魔物技能ID[{}]失败", id, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+    }
+
+
+    @Override
+    @Transactional
+    public void updateMaOne(MonsterActionInfo m) {
+        Long battleId = GameContext.getBattleId();
+        if (battleId == null) {
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
+        if (m == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        try {
+            monsterActionInfoMapper.updateOne(m);
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            String key = RedisKeyConstants.MONSTER_ACTION.getKey(battleId);
+                            Map<String, Object> map = new HashMap<>();
+                            map.put("currentCd", m.getCurrentCd());
+                            map.put("restContinueRound", m.getRestContinueRound());
+                            map.put("updateTime", m.getUpdateTime());
+                            redisUtil.hashPut(key, m.getId().toString(), map);
+                        }
+                    }
+            );
+        } catch (Exception e) {
+            logger.error("更新魔物技能情况失败,战斗ID[{}]", battleId, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updateMaAll(List<MonsterActionInfo> list) {
+        Long battleId = GameContext.getBattleId();
+        if (battleId == null) {
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
+        if (list.isEmpty()) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        try {
+            monsterActionInfoMapper.updateBatch(list);
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            Map<String, Object> batch = new HashMap<>();
+                            String key = RedisKeyConstants.MONSTER_ACTION.getKey(battleId);
+                            for (MonsterActionInfo m : list) {
+                                Map<String, Object> map = new HashMap<>();
+                                map.put("currentCd", m.getCurrentCd());
+                                map.put("restContinueRound", m.getRestContinueRound());
+                                map.put("updateTime", m.getUpdateTime());
+                                batch.put(m.getId().toString(), map);
+                            }
+                            redisUtil.hashPutAll(key, batch);
+                        }
+                    }
+            );
+        } catch (Exception e) {
+            logger.error("批量更新魔物技能情况失败,战斗ID[{}]", battleId, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void passRoundOneMaUpdate(MonsterActionInfo monsterActionInfo) {
+        if (monsterActionInfo == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        int currentCd = monsterActionInfo.getCurrentCd();
+        int restRound = monsterActionInfo.getRestContinueRound();
+        monsterActionInfo.setCurrentCd(Math.max(0, currentCd - 1));
+        monsterActionInfo.setRestContinueRound(Math.max(0, restRound - 1));
+        updateMaOne(monsterActionInfo);
+    }
+
+    @Override
+    @Transactional
+    public void passRoundAllMaUpdate(List<MonsterActionInfo> list) {
+        if (list.isEmpty()) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        for (MonsterActionInfo m : list) {
+            m.setCurrentCd(Math.max(0, m.getCurrentCd() - 1));
+            m.setRestContinueRound(Math.max(0, m.getRestContinueRound() - 1));
+        }
+        updateMaAll(list);
     }
 }

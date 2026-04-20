@@ -11,6 +11,9 @@ public interface PlayerActionInfoMapper {
     @Select("SELECT * FROM player_action_info WHERE battle_id=#{battleId}")
     List<PlayerActionInfo> getByBattleId(@Param("battleId") Long battleId);
 
+    @Select("SELECT * FROM player_action_info WHERE id=#{id}")
+    PlayerActionInfo getById(@Param("id")Long id);
+
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")//todo:时间
     @Insert("INSERT INTO player_action_info (battle_id, player_id, action_id, current_cd, " +
             "rest_continue_round, create_time, update_time) " +

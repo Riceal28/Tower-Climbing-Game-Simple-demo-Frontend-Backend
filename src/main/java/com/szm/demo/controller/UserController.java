@@ -21,9 +21,6 @@ public class UserController {
     @Autowired
     UserService userService;
 
-    @Autowired
-    SaveService saveService;
-
     @PostMapping("/register")
     public Result<String> register(@RequestBody UserRegisterReq req) {
         userService.register(req);
