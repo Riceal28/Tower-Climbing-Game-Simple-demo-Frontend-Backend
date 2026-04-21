@@ -269,7 +269,7 @@ public class PlayerServiceImpl implements PlayerService {
         int mpCost = actionInfo.getMpCost();
         LevelInfo levelInfo =
                 levelService.getLevelInfo(userPlayerInfo.getPlayerClass(), userPlayerInfo.getLevel());
-        if (actionInfo.getTargetIsForSelf()) {
+        if (actionInfo.getIsTargetPlayer()) {
             userPlayerInfo.setCurrentHp(Math.max(0, userPlayerInfo.getCurrentHp() + forHp));
             userPlayerInfo.setCurrentMp(Math.max(0, userPlayerInfo.getCurrentMp() + forMp - mpCost));
             //限制超出值 todo:可能的优化
