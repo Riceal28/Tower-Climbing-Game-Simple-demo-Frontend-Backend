@@ -3,6 +3,8 @@ import LoginPage from '../pages/LoginPage.vue'
 import RegisterPage from '../pages/RegisterPage.vue'
 import Home from '../pages/Home.vue'
 import PlayerViewPage from '../pages/PlayerViewPage.vue'
+import BattlePage from '../pages/BattlePage.vue'
+import SavePage from '../pages/SavePage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -31,6 +33,18 @@ const router = createRouter({
       path: '/player',
       name: 'PlayerView',
       component: PlayerViewPage,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/battle',
+      name: 'Battle',
+      component: BattlePage,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/save',
+      name: 'Save',
+      component: SavePage,
       meta: { requiresAuth: true }
     }
   ],

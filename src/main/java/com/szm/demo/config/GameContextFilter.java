@@ -12,10 +12,10 @@ public class GameContextFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain chain) throws IOException, ServletException {
         try {
             HttpServletRequest request = (HttpServletRequest) servletRequest;
-            Long userId = Long.parseLong(request.getHeader("X-User-Id"));
-            Long playerId = Long.parseLong(request.getHeader("X-Player-Id"));
-            Long saveId = Long.parseLong(request.getHeader("X-Save-Id"));
-            Long battleId = Long.parseLong(request.getHeader("X-Battle-Id"));
+            Long userId = getHeaderLong(request, "X-User-Id");
+            Long playerId = getHeaderLong(request, "X-Player-Id");
+            Long saveId = getHeaderLong(request, "X-Save-Id");
+            Long battleId = getHeaderLong(request, "X-Battle-Id");
             if (userId != null) {
                 GameContext.init(userId, playerId, saveId,battleId);
             }
@@ -23,5 +23,12 @@ public class GameContextFilter implements Filter {
         } finally {
             GameContext.clear();
         }
+    }
+    private Long getHeaderLong(HttpServletRequest request, String headerName) {
+        String value = request.getHeader(headerName);
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        return Long.parseLong(value);
     }
 }

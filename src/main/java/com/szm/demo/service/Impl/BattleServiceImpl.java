@@ -50,6 +50,8 @@ public class BattleServiceImpl implements BattleService {
     private MonsterActionInfoMapper monsterActionInfoMapper;
     @Autowired
     private SaveInfoMapper saveInfoMapper;
+    @Autowired
+    private PlayerProviderService playerProviderService;
 
     // ==================== 原有方法 ====================
 
@@ -162,7 +164,7 @@ public class BattleServiceImpl implements BattleService {
             if (mpCost > battleInfo.getPlayerCurrentMp()) {
                 throw new BusinessException(ResultCode.MP_NOT_ENOUGH);
             }
-            UserPlayerInfo player = playerService.getPlayerInfo();
+            UserPlayerInfo player = playerProviderService.getPlayerInfo();
             LevelInfo levelInfo = levelService.getLevelInfo(player.getPlayerClass(), player.getLevel());
 
             battleInfo.setPlayerCurrentHp(Math.max(0, battleInfo.getPlayerCurrentHp() + forHp));
@@ -178,7 +180,7 @@ public class BattleServiceImpl implements BattleService {
             if (mpCost > battleInfo.getPlayerCurrentMp()) {
                 throw new BusinessException(ResultCode.MP_NOT_ENOUGH);
             }
-            UserPlayerInfo player = playerService.getPlayerInfo();
+            UserPlayerInfo player = playerProviderService.getPlayerInfo();
             // 总伤害 = 技能基础伤害 + 角色攻击力
             int totalDamage = Math.abs(forHp) + player.getAttackBase();
 
@@ -407,20 +409,20 @@ public class BattleServiceImpl implements BattleService {
             saveService.updateSave(saveInfo);
 
             // 更新角色属性（等级和经验）
-            UserPlayerInfo player = playerService.getPlayerInfo();
+            UserPlayerInfo player = playerProviderService.getPlayerInfo();
             player.setExp(player.getExp() + gainExp);
             player.setCurrentHp(battleInfo.getPlayerCurrentHp());
             player.setCurrentMp(battleInfo.getPlayerCurrentMp());
-            playerService.updatePlayerInfo(player);
+            playerProviderService.updatePlayerInfo(player);
 
             // 尝试升级
             playerService.tryLevelUp();
 
         } else {
             // 失败：角色HP设为0，但不修改存档
-            UserPlayerInfo player = playerService.getPlayerInfo();
+            UserPlayerInfo player = playerProviderService.getPlayerInfo();
             player.setCurrentHp(0);
-            playerService.updatePlayerInfo(player);
+            playerProviderService.updatePlayerInfo(player);
         }
 
         // 清理战斗状态
@@ -501,7 +503,7 @@ public class BattleServiceImpl implements BattleService {
         if (actionInfo.getIsTargetPlayer()) {
             return "使用了「" + actionName + "」";
         } else {
-            int damage = Math.abs(actionInfo.getForHp()) + playerService.getPlayerInfo().getAttackBase();
+            int damage = Math.abs(actionInfo.getForHp()) + playerProviderService.getPlayerInfo().getAttackBase();
             return "使用了「" + actionName + "」，造成 " + damage + " 点伤害";
         }
     }

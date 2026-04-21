@@ -13,6 +13,7 @@ import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.mapper.UserPlayerInfoMapper;
 import com.szm.demo.service.ActionService;
 import com.szm.demo.service.LevelService;
+import com.szm.demo.service.PlayerProviderService;
 import com.szm.demo.service.PlayerService;
 import com.szm.demo.util.MapUtil;
 import com.szm.demo.util.RedisUtil;
@@ -39,6 +40,9 @@ public class PlayerServiceImpl implements PlayerService {
 
     @Autowired
     UserPlayerInfoMapper userPlayerInfoMapper;
+
+    @Autowired
+    PlayerProviderService playerProviderService;
 
     @Autowired
     LevelService levelService;
@@ -87,61 +91,6 @@ public class PlayerServiceImpl implements PlayerService {
         }
     }
 
-    @Override//todo:try包围
-    public UserPlayerInfo getPlayerInfo() {
-        Long playerId = GameContext.getPlayerId();
-        if (playerId == null) {
-            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
-        }
-        String key = RedisKeyConstants.USER_PLAYER.getKey(playerId);
-        Map<String, Object> map = redisUtil.hashEntries(key, Object.class);
-        if (!CollectionUtils.isEmpty(map)) {
-            return MapUtil.mapToPlayer(map);
-        }
-        UserPlayerInfo userPlayerInfo = userPlayerInfoMapper.getById(playerId);
-        if (userPlayerInfo == null) {
-            logger.error("用户角色信息不存在");
-            throw new BusinessException(ResultCode.NOT_FOUND, "角色不存在");
-        }
-        Map<String, Object> map2 = MapUtil.playerToMap(userPlayerInfo);
-        redisUtil.hashPutAll(key, map2);
-
-        logger.info("查询了一次用户角色详情");
-        return userPlayerInfo;
-    }
-
-    @Override
-    @Transactional
-    public void updatePlayerInfo(UserPlayerInfo userPlayerInfo) {
-        if (userPlayerInfo == null) {
-            throw new BusinessException(ResultCode.BAD_REQUEST);
-        }
-        if (userPlayerInfo.getId() == null) {
-            throw new BusinessException(ResultCode.BAD_REQUEST);
-        }
-        Long playerId = GameContext.getPlayerId();
-        if (playerId == null || !Objects.equals(userPlayerInfo.getId(), playerId)) {
-            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
-        }
-
-        String key = RedisKeyConstants.USER_PLAYER.getKey(playerId);
-        try {
-            userPlayerInfoMapper.updateAllById(userPlayerInfo);
-            TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            Map<String, Object> map = MapUtil.playerToMap(userPlayerInfo);
-                            redisUtil.hashPutAll(key, map);
-                        }
-                    }
-            );
-            logger.info("角色ID[{}]:更新信息成功,{}", playerId, userPlayerInfo);
-        } catch (Exception e) {
-            logger.error("角色ID[{}]:更新信息失败", playerId, e);
-            throw new BusinessException(ResultCode.SYSTEM_ERROR);
-        }
-    }
 
     @Override
     @Transactional
@@ -150,7 +99,7 @@ public class PlayerServiceImpl implements PlayerService {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
         UserPlayerInfo userPlayerInfo = saveToPlayer(saveInfo);
-        updatePlayerInfo(userPlayerInfo);
+        playerProviderService.updatePlayerInfo(userPlayerInfo);
     }
 
     private UserPlayerInfo saveToPlayer(SaveInfo saveInfo) {
@@ -158,7 +107,7 @@ public class PlayerServiceImpl implements PlayerService {
             logger.error("存档读取异常: 空对象");
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
-        UserPlayerInfo userPlayerInfo = getPlayerInfo();
+        UserPlayerInfo userPlayerInfo = playerProviderService.getPlayerInfo();
         LevelInfo levelInfo =
                 levelService.getLevelInfo(userPlayerInfo.getPlayerClass(), saveInfo.getLevel());
         userPlayerInfo.setLevel(saveInfo.getLevel());
@@ -180,8 +129,7 @@ public class PlayerServiceImpl implements PlayerService {
         PlayerShowResp resp = redisUtil.get(key, PlayerShowResp.class);//todo:HASH 低优先级
         if (resp == null) {
             resp = new PlayerShowResp();
-            PlayerService playerService2 = new PlayerServiceImpl();
-            UserPlayerInfo userPlayerInfo = playerService2.getPlayerInfo();
+            UserPlayerInfo userPlayerInfo = playerProviderService.getPlayerInfo();
             LevelInfo levelInfo = levelService.getLevelInfo(userPlayerInfo.getPlayerClass(), userPlayerInfo.getLevel());
             resp.setPlayerClass(userPlayerInfo.getPlayerClass());
             resp.setLevel(userPlayerInfo.getLevel());
@@ -198,7 +146,7 @@ public class PlayerServiceImpl implements PlayerService {
     @Transactional
     public void resetPlayer(Long playerId) {
         Long userId = GameContext.getUserId();
-        UserPlayerInfo userPlayerInfo = getPlayerInfo();
+        UserPlayerInfo userPlayerInfo = playerProviderService.getPlayerInfo();
         if (!Objects.equals(userPlayerInfo.getUserId(), userId)) {
             throw new BusinessException(ResultCode.UNAUTHORIZED, "非法操作");
         }
@@ -209,7 +157,7 @@ public class PlayerServiceImpl implements PlayerService {
         userPlayerInfo.setCurrentHp(levelInfo.getMaxHp());
         userPlayerInfo.setCurrentMp(levelInfo.getMaxMp());
         userPlayerInfo.setUpdateTime(LocalDateTime.now());
-        updatePlayerInfo(userPlayerInfo);
+        playerProviderService.updatePlayerInfo(userPlayerInfo);
         logger.warn("角色ID[{}]:角色被重置了", playerId);
     }
 
@@ -224,7 +172,7 @@ public class PlayerServiceImpl implements PlayerService {
         if (playerId == null) {
             throw new BusinessException(ResultCode.PRECONDITION_FAILED);
         }
-        UserPlayerInfo userPlayerInfo = getPlayerInfo();
+        UserPlayerInfo userPlayerInfo = playerProviderService.getPlayerInfo();
         long currentExp = userPlayerInfo.getExp();
         int currentLevel = userPlayerInfo.getLevel();
         LevelInfo levelInfo = levelService.getLevelInfo(userPlayerInfo.getPlayerClass(), currentLevel);
@@ -278,6 +226,6 @@ public class PlayerServiceImpl implements PlayerService {
         } else {
 
         }
-        updatePlayerInfo(userPlayerInfo);
+        playerProviderService.updatePlayerInfo(userPlayerInfo);
     }
 }

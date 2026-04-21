@@ -9,6 +9,7 @@ import com.szm.demo.entity.SaveInfo;
 import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.mapper.SaveInfoMapper;
 import com.szm.demo.service.LevelService;
+import com.szm.demo.service.PlayerProviderService;
 import com.szm.demo.service.PlayerService;
 import com.szm.demo.service.SaveService;
 import com.szm.demo.util.MapUtil;
@@ -34,7 +35,7 @@ public class SaveServiceImpl implements SaveService {
     RedisUtil redisUtil;
 
     @Autowired
-    PlayerService playerService;
+    PlayerProviderService playerProviderService;
 
     @Autowired
     SaveInfoMapper saveInfoMapper;
@@ -57,7 +58,7 @@ public class SaveServiceImpl implements SaveService {
         }
         try {
             SaveInfo saveInfo = new SaveInfo();
-            UserPlayerInfo userPlayerInfo = playerService.getPlayerInfo();
+            UserPlayerInfo userPlayerInfo = playerProviderService.getPlayerInfo();
             LevelInfo levelInfo = levelService
                     .getLevelInfo(userPlayerInfo.getPlayerClass(), userPlayerInfo.getLevel());
             saveInfo.setUserId(userId);//创建初始角色-使用角色创建存档-存档-角色信息界面

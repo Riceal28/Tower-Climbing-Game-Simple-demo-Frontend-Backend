@@ -5,6 +5,7 @@ import com.szm.demo.common.PlayerClass;
 import com.szm.demo.common.Result;
 import com.szm.demo.dto.PlayerShowResp;
 import com.szm.demo.entity.UserPlayerInfo;
+import com.szm.demo.service.PlayerProviderService;
 import com.szm.demo.service.PlayerService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,8 @@ public class PlayerController {
 
     @Autowired
     PlayerService playerService;
+    @Autowired
+    private PlayerProviderService playerProviderService;
 
     @GetMapping("/showbase")
     public Result<PlayerShowResp> showPlayer() {
@@ -30,10 +33,10 @@ public class PlayerController {
 
     @PostMapping("/levelup")
     public Result<String> playerLevelUP(@RequestBody Long exp) {
-        UserPlayerInfo userPlayerInfo = playerService.getPlayerInfo();
+        UserPlayerInfo userPlayerInfo = playerProviderService.getPlayerInfo();
         Long newExp = userPlayerInfo.getExp()+exp;
         userPlayerInfo.setExp(newExp);
-        playerService.updatePlayerInfo(userPlayerInfo);
+        playerProviderService.updatePlayerInfo(userPlayerInfo);
         playerService.tryLevelUp();
         return Result.success("升级成功");
     }

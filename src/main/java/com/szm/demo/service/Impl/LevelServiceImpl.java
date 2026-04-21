@@ -10,6 +10,7 @@ import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.mapper.LevelInfoMapper;
 import com.szm.demo.mapper.UserPlayerInfoMapper;
 import com.szm.demo.service.LevelService;
+import com.szm.demo.service.PlayerProviderService;
 import com.szm.demo.service.PlayerService;
 import com.szm.demo.util.RedisUtil;
 import org.slf4j.Logger;
@@ -27,16 +28,12 @@ public class LevelServiceImpl implements LevelService {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    PlayerService playerService;
-
-    @Autowired
     LevelInfoMapper levelInfoMapper;
 
     @Autowired
-    UserPlayerInfoMapper userPlayerInfoMapper;
-
-    @Autowired
     RedisUtil redisUtil;
+    @Autowired
+    private PlayerProviderService playerProviderService;
 
     @Override
     public LevelInfo getLevelInfo(PlayerClass playerClass, Integer level) {
@@ -67,11 +64,11 @@ public class LevelServiceImpl implements LevelService {
     @Transactional
     public Long levelUp(Long extraExp) {
         Long playerId = GameContext.getPlayerId();
-        UserPlayerInfo userPlayerInfo = playerService.getPlayerInfo();
+        UserPlayerInfo userPlayerInfo = playerProviderService.getPlayerInfo();
         int nextLevel = userPlayerInfo.getLevel() + 1;
         if (nextLevel >= 37) {//todo:修改等级上限配置
             userPlayerInfo.setExp(0L);
-            playerService.updatePlayerInfo(userPlayerInfo);
+            playerProviderService.updatePlayerInfo(userPlayerInfo);
             return -1L;
         }
         LevelInfo levelInfo = getLevelInfo(userPlayerInfo.getPlayerClass(),nextLevel);
@@ -82,7 +79,7 @@ public class LevelServiceImpl implements LevelService {
             userPlayerInfo.setCurrentHp(levelInfo.getMaxHp());//todo:可调整点:升级恢复状态或者不变
             userPlayerInfo.setCurrentMp(levelInfo.getMaxMp());
             userPlayerInfo.setUpdateTime(LocalDateTime.now());
-            playerService.updatePlayerInfo(userPlayerInfo);
+            playerProviderService.updatePlayerInfo(userPlayerInfo);
 
         } catch (Exception e) {
             logger.error("角色ID[{}]:升级失败", userPlayerInfo.getId(), e);

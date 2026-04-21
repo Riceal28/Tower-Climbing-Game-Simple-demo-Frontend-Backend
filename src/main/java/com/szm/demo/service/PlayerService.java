@@ -8,8 +8,6 @@ import com.szm.demo.entity.UserPlayerInfo;
 
 public interface PlayerService {
     void createPlayer(PlayerClass playerClass);
-    UserPlayerInfo getPlayerInfo();
-    void updatePlayerInfo(UserPlayerInfo userPlayerInfo);
     void updatePlayerBySave(SaveInfo saveInfo);
     PlayerShowResp showPlayer();
     void resetPlayer(Long userId);

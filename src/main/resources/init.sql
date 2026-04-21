@@ -122,8 +122,7 @@ CREATE TABLE IF NOT EXISTS player_action_info
     current_cd          INT      NOT NULL DEFAULT 0 COMMENT '该行为当前冷却时间',
     rest_continue_round INT      NOT NULL DEFAULT 0 COMMENT '剩余持续回合数',
     create_time         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    INDEX               idx_user_id (user_id) COMMENT '按创建时间查询索引'
+    update_time         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COMMENT = '角色技能关联表';
@@ -147,7 +146,7 @@ CREATE TABLE IF NOT EXISTS monster_info
   DEFAULT CHARSET = utf8mb4
   COMMENT = '魔物信息表';
 
--- 魔物技能关联表, 用于关联魔物的技能组
+-- 魔物技能关联表, 用于关联魔物的技能组//todo:逻辑bug 技能组应该为静态信息
 CREATE TABLE IF NOT EXISTS monster_action_info
 (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
