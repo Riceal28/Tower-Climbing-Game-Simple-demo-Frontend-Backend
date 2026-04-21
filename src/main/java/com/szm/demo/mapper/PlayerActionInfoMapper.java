@@ -14,7 +14,7 @@ public interface PlayerActionInfoMapper {
     @Select("SELECT * FROM player_action_info WHERE id=#{id}")
     PlayerActionInfo getById(@Param("id")Long id);
 
-    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")//todo:时间
+    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     @Insert("INSERT INTO player_action_info (battle_id, player_id, action_id, current_cd, " +
             "rest_continue_round, create_time, update_time) " +
             "VALUES (#{playerActionInfo.battleId},#{playerActionInfo.playerId},#{playerActionInfo.actionId}," +
@@ -66,4 +66,18 @@ public interface PlayerActionInfoMapper {
             </script>
             """)
     int updateBatch(@Param("list") List<PlayerActionInfo> list);
+
+    @Update("""
+            <script>
+            UPDATE player_action_info SET battle_id = #{battleId}, update_time = CURRENT_TIMESTAMP
+            WHERE id IN
+            <foreach collection="list" item="pa" open="(" separator="," close=")">
+                #{pa.id}
+            </foreach>
+            </script>
+            """)
+    int updateBattleIdBatch(@Param("list") List<PlayerActionInfo> list);
+
+    @Delete("DELETE FROM player_action_info WHERE battle_id=#{battleId}")
+    int deleteByBattleId(@Param("battleId") Long battleId);
 }

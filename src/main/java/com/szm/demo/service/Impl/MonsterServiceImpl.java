@@ -3,7 +3,9 @@ package com.szm.demo.service.Impl;
 import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
+import com.szm.demo.entity.MonsterActionInfo;
 import com.szm.demo.entity.MonsterInfo;
+import com.szm.demo.mapper.MonsterActionInfoMapper;
 import com.szm.demo.mapper.MonsterInfoMapper;
 import com.szm.demo.service.MonsterService;
 import com.szm.demo.util.RedisUtil;
@@ -11,6 +13,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
+import java.util.Collections;
+import java.util.List;
 
 @Service
 public class MonsterServiceImpl implements MonsterService {
@@ -19,11 +25,12 @@ public class MonsterServiceImpl implements MonsterService {
 
     @Autowired
     MonsterInfoMapper monsterInfoMapper;
-
+    @Autowired
+    MonsterActionInfoMapper monsterActionInfoMapper;
     @Autowired
     RedisUtil redisUtil;
 
-    @Override//todo:设置过期时间
+    @Override
     public MonsterInfo getByMId(Long monsterId) {
         if (monsterId == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
@@ -44,6 +51,19 @@ public class MonsterServiceImpl implements MonsterService {
             throw e;
         } catch (Exception e) {
             logger.error("查询魔物信息失败,魔物ID[{}]", monsterId, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+    }
+
+    @Override
+    public List<MonsterActionInfo> getMonsterActions(Long monsterId) {
+        if (monsterId == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        try {
+            return monsterActionInfoMapper.getByMonsterId(monsterId);
+        } catch (Exception e) {
+            logger.error("查询魔物技能失败,魔物ID[{}]", monsterId, e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
     }

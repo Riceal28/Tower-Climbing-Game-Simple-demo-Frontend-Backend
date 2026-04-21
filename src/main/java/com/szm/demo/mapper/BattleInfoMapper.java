@@ -35,4 +35,7 @@ public interface BattleInfoMapper {
             "#{battleInfo.monsterCurrentHp},#{battleInfo.monsterCurrentMp},#{battleInfo.monsterCurrentDefend}" +
             "#{battleInfo.updateTime}) WHERE save_id = #{battleInfo.saveId}")
     void updateBySaveId(@Param("saveInfo") BattleInfo battleInfo);
+
+    @Delete("DELETE FROM battle_info WHERE save_id = #{saveId}")
+    void deleteBySaveId(@Param("saveId") Long saveId);
 }
