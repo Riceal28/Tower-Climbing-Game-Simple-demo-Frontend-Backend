@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS action_info
     action_type        VARCHAR(20)  NOT NULL DEFAULT 'ATTACK' COMMENT '类型: ATTACK/DEFENSE/HEAL/SPELL/BUFF',
     action_name        VARCHAR(50)  NOT NULL DEFAULT "" COMMENT '技能名',
     description        VARCHAR(255) NOT NULL DEFAULT "" COMMENT '描述',
-    target_is_for_self TINYINT      NOT NULL DEFAULT 0 COMMENT '作用对象是否自身,0对方,1自身',
+    is_target_player   TINYINT      NOT NULL DEFAULT 0 COMMENT '作用对象是否玩家,0魔物,1玩家',
 --     target_num         INT          NOT NULL DEFAULT 0 COMMENT '可作用对象数量(单体/AOE)',
     for_hp             INT          NOT NULL DEFAULT 0 COMMENT '对HP作用的数值(伤害或治疗)',
     for_mp             INT          NOT NULL DEFAULT 0 COMMENT '对MP作用的数值(消耗或回复)',
