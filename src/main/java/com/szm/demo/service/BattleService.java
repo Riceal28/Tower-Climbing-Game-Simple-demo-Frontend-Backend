@@ -1,9 +1,6 @@
 package com.szm.demo.service;
 
-import com.szm.demo.entity.BattleInfo;
-import com.szm.demo.entity.MonsterInfo;
-import com.szm.demo.entity.SaveInfo;
-import com.szm.demo.entity.UserPlayerInfo;
+import com.szm.demo.entity.*;
 
 public interface BattleService {
 
@@ -14,4 +11,6 @@ public interface BattleService {
     BattleInfo convertFromSave(SaveInfo saveInfo);
 
     void updateBattle(BattleInfo battleInfo);
+
+    void afterOneAction(BattleInfo battleInfo, ActionInfo actionInfo);
 }

@@ -62,11 +62,11 @@ public class ActionInfo {
         this.description = description;
     }
 
-    public Boolean getTargetIsForSelf() {
+    public Boolean getIsTargetPlayer() {
         return targetIsForSelf;
     }
 
-    public void setTargetIsForSelf(Boolean targetIsForSelf) {
+    public void setIsTargetPlayer(Boolean targetIsForSelf) {
         this.targetIsForSelf = targetIsForSelf;
     }
 
@@ -145,8 +145,8 @@ public class ActionInfo {
     @Override
     public String toString() {
         return String.format(
-                "ActionInfo[id=%s, actionId=%s, actionType=%s, actionName=%s, description=%s, targetIsForSelf=%s, forHp=%s, forMp=%s, forDefend=%s, mpCost=%s, isContinue=%s, continueRound=%s, cd=%s, createTime=%s, updateTime=%s]",
-                getId(), getActionId(), getActionType(), getActionName(), getDescription(), getTargetIsForSelf(),
+                "ActionInfo[id=%s, actionId=%s, actionType=%s, actionName=%s, description=%s, isTargetPlayer=%s, forHp=%s, forMp=%s, forDefend=%s, mpCost=%s, isContinue=%s, continueRound=%s, cd=%s, createTime=%s, updateTime=%s]",
+                getId(), getActionId(), getActionType(), getActionName(), getDescription(), getIsTargetPlayer(),
                 getForHp(), getForMp(), getForDefend(), getMpCost(), getIsContinue(), getContinueRound(),
                 getCd(), getCreateTime(), getUpdateTime()
         );

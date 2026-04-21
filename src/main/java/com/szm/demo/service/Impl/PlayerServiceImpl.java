@@ -6,6 +6,7 @@ import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.context.GameContext;
 import com.szm.demo.dto.PlayerShowResp;
+import com.szm.demo.entity.ActionInfo;
 import com.szm.demo.entity.LevelInfo;
 import com.szm.demo.entity.SaveInfo;
 import com.szm.demo.entity.UserPlayerInfo;
@@ -253,4 +254,30 @@ public class PlayerServiceImpl implements PlayerService {
         logger.info("角色ID[{}]:尝试进行升级:结束，总耗时={}ms", playerId, System.currentTimeMillis() - startTime);
     }
 
+    @Override
+    @Transactional
+    public void afterActionByPlayer(UserPlayerInfo userPlayerInfo, ActionInfo actionInfo) {
+        if (userPlayerInfo == null || actionInfo == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        if (userPlayerInfo.getCurrentMp() < actionInfo.getMpCost()) {
+            throw new BusinessException(ResultCode.MP_NOT_ENOUGH);
+        }
+        int forHp = actionInfo.getForHp();
+        int forMp = actionInfo.getForMp();
+        int forDefend = actionInfo.getForDefend();//todo: 更新格挡值
+        int mpCost = actionInfo.getMpCost();
+        LevelInfo levelInfo =
+                levelService.getLevelInfo(userPlayerInfo.getPlayerClass(), userPlayerInfo.getLevel());
+        if (actionInfo.getTargetIsForSelf()) {
+            userPlayerInfo.setCurrentHp(Math.max(0, userPlayerInfo.getCurrentHp() + forHp));
+            userPlayerInfo.setCurrentMp(Math.max(0, userPlayerInfo.getCurrentMp() + forMp - mpCost));
+            //限制超出值 todo:可能的优化
+            userPlayerInfo.setCurrentHp(Math.min(levelInfo.getMaxHp(), userPlayerInfo.getCurrentHp()));
+            userPlayerInfo.setCurrentMp(Math.min(levelInfo.getMaxMp(), userPlayerInfo.getCurrentMp()));
+        } else {
+
+        }
+        updatePlayerInfo(userPlayerInfo);
+    }
 }

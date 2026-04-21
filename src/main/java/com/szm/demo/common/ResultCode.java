@@ -22,7 +22,9 @@ public enum ResultCode {
     SYSTEM_ERROR(600, "系统内部错误"),
     DB_ERROR(601, "数据库错误"),
     NETWORK_ERROR(602, "网络错误"),
-    TIMEOUT_ERROR(603, "请求超时");
+    TIMEOUT_ERROR(603, "请求超时"),
+    // 游戏内部错误
+    MP_NOT_ENOUGH(1001,"MP不足");
 
     private final Integer code;
     private final String message;

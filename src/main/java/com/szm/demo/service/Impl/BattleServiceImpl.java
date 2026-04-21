@@ -4,10 +4,7 @@ import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.context.GameContext;
-import com.szm.demo.entity.BattleInfo;
-import com.szm.demo.entity.MonsterInfo;
-import com.szm.demo.entity.SaveInfo;
-import com.szm.demo.entity.UserPlayerInfo;
+import com.szm.demo.entity.*;
 import com.szm.demo.mapper.BattleInfoMapper;
 import com.szm.demo.service.*;
 import com.szm.demo.util.MapUtil;
@@ -40,6 +37,8 @@ public class BattleServiceImpl implements BattleService {
     PlayerService playerService;
     @Autowired
     private RedisUtil redisUtil;
+    @Autowired
+    private LevelService levelService;
 
     @Override
     @Transactional
@@ -145,6 +144,43 @@ public class BattleServiceImpl implements BattleService {
         } catch (Exception e) {
             logger.error("更新战斗信息失败,战斗ID[{}]", battleInfo.getId(), e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void afterOneAction(BattleInfo battleInfo, ActionInfo actionInfo) {
+        if (battleInfo == null | actionInfo == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        int forHp = actionInfo.getForHp();
+        int forMp = actionInfo.getForMp();
+        int forDefend = actionInfo.getForDefend();//todo: 更新格挡值
+        int mpCost = actionInfo.getMpCost();
+        if (actionInfo.getIsTargetPlayer()) {
+            if (actionInfo.getMpCost() > battleInfo.getPlayerCurrentMp()) {
+                throw new BusinessException(ResultCode.MP_NOT_ENOUGH);
+            }
+            UserPlayerInfo userPlayerInfo = playerService.getPlayerInfo();
+            LevelInfo levelInfo = levelService.
+                    getLevelInfo(userPlayerInfo.getPlayerClass(), userPlayerInfo.getLevel());
+
+            battleInfo.setPlayerCurrentHp(Math.max(0, battleInfo.getPlayerCurrentHp() + forHp));
+            battleInfo.setPlayerCurrentMp(Math.max(0, battleInfo.getPlayerCurrentMp() + forMp - mpCost));
+            battleInfo.setPlayerCurrentDefend(Math.max(0, battleInfo.getPlayerCurrentDefend() + forDefend));
+
+            battleInfo.setPlayerCurrentHp(Math.min(levelInfo.getMaxHp(), battleInfo.getPlayerCurrentHp()));
+            battleInfo.setPlayerCurrentMp(Math.min(levelInfo.getMaxMp(), battleInfo.getPlayerCurrentMp()));
+            updateBattle(battleInfo);
+        } else {
+            if (actionInfo.getMpCost() > battleInfo.getPlayerCurrentMp()) {
+                throw new BusinessException(ResultCode.MP_NOT_ENOUGH);
+            }
+            UserPlayerInfo userPlayerInfo = playerService.getPlayerInfo();
+            forHp = -Math.abs(actionInfo.getForHp()) - userPlayerInfo.getAttackBase();
+            battleInfo.setMonsterCurrentHp(battleInfo.getMonsterCurrentHp() + forHp);
+            battleInfo.setMonsterCurrentMp(battleInfo.getMonsterCurrentMp() + forMp);
+            battleInfo.setMonsterCurrentDefend(battleInfo.getMonsterCurrentDefend() + forDefend);
         }
     }
 }
