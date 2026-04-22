@@ -52,6 +52,12 @@ public class BattleServiceImpl implements BattleService {
     private SaveInfoMapper saveInfoMapper;
     @Autowired
     private PlayerProviderService playerProviderService;
+    @Autowired
+    private BattleProviderService battleProviderService;
+    @Autowired
+    private PlayerActionGroupMapper playerActionGroupMapper;
+    @Autowired
+    private MonsterActionGroupMapper monsterActionGroupMapper;
 
     // ==================== 原有方法 ====================
 
@@ -130,26 +136,6 @@ public class BattleServiceImpl implements BattleService {
     }
 
     @Override
-    public void updateBattle(BattleInfo battleInfo) {
-        if (battleInfo == null) throw new BusinessException(ResultCode.BAD_REQUEST);
-        try {
-            battleInfoMapper.updateById(battleInfo);
-            TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            String key = RedisKeyConstants.BATTLE_INFO.getKey(battleInfo.getSaveId());
-                            redisUtil.hashPutAll(key, MapUtil.battleToMap(battleInfo));
-                        }
-                    }
-            );
-        } catch (Exception e) {
-            logger.error("更新战斗信息失败,战斗ID[{}]", battleInfo.getId(), e);
-            throw new BusinessException(ResultCode.SYSTEM_ERROR);
-        }
-    }
-
-    @Override
     public void afterOneAction(BattleInfo battleInfo, ActionInfo actionInfo) {
         if (battleInfo == null || actionInfo == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
@@ -174,7 +160,7 @@ public class BattleServiceImpl implements BattleService {
             // 不超过上限
             battleInfo.setPlayerCurrentHp(Math.min(levelInfo.getMaxHp(), battleInfo.getPlayerCurrentHp()));
             battleInfo.setPlayerCurrentMp(Math.min(levelInfo.getMaxMp(), battleInfo.getPlayerCurrentMp()));
-            updateBattle(battleInfo);
+            battleProviderService.updateBattle(battleInfo);
         } else {
             // 攻击魔物
             if (mpCost > battleInfo.getPlayerCurrentMp()) {
@@ -193,7 +179,7 @@ public class BattleServiceImpl implements BattleService {
             battleInfo.setMonsterCurrentHp(Math.max(0, battleInfo.getMonsterCurrentHp() - remainingDamage));
             battleInfo.setMonsterCurrentMp(battleInfo.getMonsterCurrentMp() + forMp);
             battleInfo.setPlayerCurrentMp(battleInfo.getPlayerCurrentMp() - mpCost);
-            updateBattle(battleInfo);
+            battleProviderService.updateBattle(battleInfo);
         }
     }
 
@@ -220,16 +206,19 @@ public class BattleServiceImpl implements BattleService {
         BattleInfo battleInfo;
         if (saveInfo.getBattleOrder() == 0) {
             battleInfo = create(saveInfo);
+            logger.info("create1:{}",battleInfo);
         } else {
             battleInfo = getBySaveId();
             if (battleInfo == null) {
                 battleInfo = create(saveInfo);
+                logger.info("create2:{}",battleInfo);
             } else {
                 battleInfo = convertFromSave(saveInfo);
+                logger.info("fromSave:{}",battleInfo);
             }
 
         }
-
+        logger.info("2:{}",battleInfo);
         // 初始化玩家状态（从存档恢复HP/MP）
         battleInfo.setPlayerCurrentHp(saveInfo.getCurrentHp());
         battleInfo.setPlayerCurrentMp(saveInfo.getCurrentMp());
@@ -240,13 +229,15 @@ public class BattleServiceImpl implements BattleService {
         battleInfo.setMonsterCurrentHp(monsterInfo.getHp());
         battleInfo.setMonsterCurrentMp(monsterInfo.getMp());
         battleInfo.setMonsterCurrentDefend(0);
-        updateBattle(battleInfo);
+        battleProviderService.updateBattle(battleInfo);
+        logger.info("3:{}",battleInfo);
 
         // 绑定玩家技能到战斗
         bindPlayerActions(battleInfo.getId());
-
+        logger.info("绑定玩家技能到战斗完成");
         // 绑定魔物技能
         bindMonsterActions(battleInfo.getId(), monsterInfo.getId());
+        logger.info("绑定魔物技能完成");
 
         return new BattleResp(battleInfo, monsterInfo, "战斗开始！遭遇 " + monsterInfo.getMonsterName(), null);
     }
@@ -288,9 +279,19 @@ public class BattleServiceImpl implements BattleService {
         // 检查胜负
         String result = checkBattleEnd(battleInfo);
         if (result != null) {
-            //todo: 自调用导致事务注解失效, 粗略解决方法改进
-            BattleService battleService2 = new BattleServiceImpl();
-            battleService2.settleBattle(battleInfo, result);
+            Boolean settled = battleProviderService.settleBattle(battleInfo, result);
+            logger.info("After settleBattle [{}]",battleInfo);
+            if (Boolean.TRUE.equals(settled)) {
+                // 战斗胜利：保存存档
+                playerService.tryLevelUp();
+                saveService.saveAfterWin(battleInfo);
+
+                log = log + " 战斗胜利！";
+            } else {
+                log = log + " 战斗失败...";
+            }
+            // 清理战斗状态
+            battleProviderService.cleanupBattle(battleInfo.getId(), battleInfo.getSaveId());
         }
 
         return new BattleResp(battleInfo, monsterInfo, log, result);
@@ -338,10 +339,18 @@ public class BattleServiceImpl implements BattleService {
         // 检查胜负
         String result = checkBattleEnd(battleInfo);
         if (result != null) {
-            //todo: 自调用导致事务注解失效, 粗略解决方法改进
-            BattleService battleService2 = new BattleServiceImpl();
-            battleService2.settleBattle(battleInfo, result);
-            logBuilder.append(" 战斗结束：").append(result.equals("WIN") ? "胜利！" : "失败...");
+            Boolean settled = battleProviderService.settleBattle(battleInfo, result);
+            if (Boolean.TRUE.equals(settled)) {
+                // 战斗胜利：保存存档
+                playerService.tryLevelUp();
+                saveService.saveAfterWin(battleInfo);
+
+                logBuilder.append(" 战斗胜利！");
+            } else {
+                logBuilder.append(" 战斗失败...");
+            }
+            // 清理战斗状态
+            battleProviderService.cleanupBattle(battleInfo.getId(), battleInfo.getSaveId());
         }
 
         return new BattleResp(battleInfo, monsterInfo, logBuilder.toString(), result);
@@ -370,101 +379,71 @@ public class BattleServiceImpl implements BattleService {
         return null;
     }
 
-    /**
-     * 战斗结算
-     */
-    @Override
-    @Transactional
-    public void settleBattle(BattleInfo battleInfo, String result) {
-        Long saveId = GameContext.getSaveId();
-        SaveInfo saveInfo = saveService.getSaveById();
-
-        if ("WIN".equals(result)) {
-            // 胜利：获取经验奖励和进度奖励
-            MonsterInfo monsterInfo = monsterService.getByMId(battleInfo.getMonsterId());
-            Long gainExp = monsterInfo.getGainExp() != null ? monsterInfo.getGainExp() : 0L;
-            Integer rewardProgress = 0;
-
-            TowerFloorMonsterInfo floorMonster = towerService.getOneDetailByOrder(saveInfo.getFloor(), saveInfo.getBattleOrder());
-            if (floorMonster != null && floorMonster.getRewardProgress() != null) {
-                rewardProgress = floorMonster.getRewardProgress();
-            }
-
-            // 更新存档
-            saveInfo.setCurrentHp(battleInfo.getPlayerCurrentHp());
-            saveInfo.setCurrentMp(battleInfo.getPlayerCurrentMp());
-            saveInfo.setBattleOrder(saveInfo.getBattleOrder() + 1);
-            saveInfo.setProgress(saveInfo.getProgress() + rewardProgress);
-            saveInfo.setUpdateTime(LocalDateTime.now());
-
-            // 检查是否需要进入下一层
-            TowerFloorInfo towerFloor = towerService.getBaseByFloor(saveInfo.getFloor());
-            if (towerFloor != null && saveInfo.getProgress() >= towerFloor.getProgressNeeded()) {
-                if (towerService.hasNextFloor(saveInfo.getFloor())) {
-                    saveInfo.setFloor(saveInfo.getFloor() + 1);
-                    saveInfo.setBattleOrder(0);
-                    saveInfo.setProgress(0);
-                }
-            }
-            saveService.updateSave(saveInfo);
-
-            // 更新角色属性（等级和经验）
-            UserPlayerInfo player = playerProviderService.getPlayerInfo();
-            player.setExp(player.getExp() + gainExp);
-            player.setCurrentHp(battleInfo.getPlayerCurrentHp());
-            player.setCurrentMp(battleInfo.getPlayerCurrentMp());
-            playerProviderService.updatePlayerInfo(player);
-
-            // 尝试升级
-            playerService.tryLevelUp();
-
-        } else {
-            // 失败：角色HP设为0，但不修改存档
-            UserPlayerInfo player = playerProviderService.getPlayerInfo();
-            player.setCurrentHp(0);
-            playerProviderService.updatePlayerInfo(player);
-        }
-
-        // 清理战斗状态
-        deleteBattleActions(battleInfo.getId());
-        battleInfoMapper.deleteBySaveId(saveId);
-        TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        redisUtil.delete(RedisKeyConstants.BATTLE_INFO.getKey(saveId));
-                    }
-                }
-        );
-    }
-
     // ==================== 私有辅助方法 ====================
 
     /**
      * 绑定玩家技能到战斗
+     * 流程：从player_action_group(技能模板)获取角色等级对应的技能组 → 初始化player_action_info(战斗技能实例)
      */
     private void bindPlayerActions(Long battleId) {
-        Long playerId = GameContext.getPlayerId();
-        List<PlayerActionInfo> actions = playerActionInfoMapper.getByBattleId(0L);
-        if (actions.isEmpty()) return;
-
-        for (PlayerActionInfo pa : actions) {
-            pa.setBattleId(battleId);
+        // 获取角色等级对应的技能模板
+        UserPlayerInfo playerInfo = playerProviderService.getPlayerInfo();
+        List<PlayerActionGroup> actionGroups = playerActionGroupMapper.getByLId((long) playerInfo.getLevel());
+        if (actionGroups == null || actionGroups.isEmpty()) {
+            logger.warn("角色等级[{}]未配置技能组", playerInfo.getLevel());
+            return;
         }
-        playerActionInfoMapper.updateBattleIdBatch(actions);
+
+        // 从技能模板创建战斗技能实例
+        LocalDateTime now = LocalDateTime.now();
+        List<PlayerActionInfo> battleActions = actionGroups.stream()
+                .map(group -> {
+                    PlayerActionInfo pa = new PlayerActionInfo();
+                    pa.setBattleId(battleId);
+                    pa.setPlayerId(playerInfo.getId());
+                    pa.setActionId(group.getActionId());
+                    pa.setCurrentCd(0);  // 初始CD为0，可立即使用
+                    pa.setRestContinueRound(0);
+                    pa.setCreateTime(now);
+                    pa.setUpdateTime(now);
+                    return pa;
+                })
+                .collect(Collectors.toList());
+
+        playerActionInfoMapper.batchInsert(battleActions);
+        logger.info("初始化角色战斗技能[{}]个", battleActions.size());
     }
 
     /**
      * 绑定魔物技能到战斗
+     * 流程：从monster_action_group(技能模板)获取魔物的技能组 → 初始化monster_action_info(战斗技能实例)
      */
     private void bindMonsterActions(Long battleId, Long monsterId) {
-        List<MonsterActionInfo> monsterActions = monsterService.getMonsterActions(monsterId);
-        if (monsterActions == null || monsterActions.isEmpty()) return;
-
-        for (MonsterActionInfo ma : monsterActions) {
-            ma.setBattleId(battleId);
+        // 获取魔物的技能模板
+        List<MonsterActionGroup> actionGroups = monsterActionGroupMapper.getByMId(monsterId);
+        if (actionGroups == null || actionGroups.isEmpty()) {
+            logger.warn("魔物[{}]未配置技能组", monsterId);
+            return;
         }
-        monsterActionInfoMapper.updateBattleIdBatch(monsterActions);
+
+        // 从技能模板创建战斗技能实例
+        LocalDateTime now = LocalDateTime.now();
+        List<MonsterActionInfo> battleActions = actionGroups.stream()
+                .map(group -> {
+                    MonsterActionInfo ma = new MonsterActionInfo();
+                    ma.setBattleId(battleId);
+                    ma.setMonsterId(monsterId);
+                    ma.setActionId(group.getActionId());
+                    ma.setCurrentCd(0);  // 初始CD为0
+                    ma.setRestContinueRound(0);
+                    ma.setCreateTime(now);
+                    ma.setUpdateTime(now);
+                    return ma;
+                })
+                .collect(Collectors.toList());
+
+        monsterActionInfoMapper.batchInsert(battleActions);
+        logger.info("初始化魔物战斗技能[{}]个", battleActions.size());
     }
 
     /**
@@ -473,6 +452,7 @@ public class BattleServiceImpl implements BattleService {
     private PlayerActionInfo getPaByActionId(Long actionId) {
         Long battleId = GameContext.getBattleId();
         List<PlayerActionInfo> actions = playerActionInfoMapper.getByBattleId(battleId);
+        logger.info("actions:{}",actions);
         return actions.stream()
                 .filter(a -> Objects.equals(a.getActionId(), actionId))
                 .findFirst()
@@ -532,19 +512,9 @@ public class BattleServiceImpl implements BattleService {
             battleInfo.setPlayerCurrentDefend(currentDefend - absorb);
             battleInfo.setPlayerCurrentHp(Math.max(0, battleInfo.getPlayerCurrentHp() - remainingDamage));
             battleInfo.setMonsterCurrentMp(battleInfo.getMonsterCurrentMp() + forMp);
-            updateBattle(battleInfo);
+            battleProviderService.updateBattle(battleInfo);
 
             return monsterInfo.getMonsterName() + " 使用了「" + actionInfo.getActionName() + "」，造成 " + remainingDamage + " 点伤害";
         }
-    }
-
-    /**
-     * 清理战斗相关技能数据
-     */
-    private void deleteBattleActions(Long battleId) {
-        playerActionInfoMapper.deleteByBattleId(battleId);
-        monsterActionInfoMapper.deleteByBattleId(battleId);
-        redisUtil.delete(RedisKeyConstants.PLAYER_ACTION.getKey(battleId));
-        redisUtil.delete(RedisKeyConstants.MONSTER_ACTION.getKey(battleId));
     }
 }

@@ -42,11 +42,10 @@ public class ActionServiceImpl implements ActionService {
 
     @Override
     @Transactional
-    public void addDefaultAction() {
-        Long playerId = GameContext.getPlayerId();
-        Long saveId = GameContext.getSaveId();
-        Long battleId = GameContext.getBattleId();
-        if (playerId == null || saveId == null || battleId == null) {
+    public void addDefaultAction(Long playerId) {
+//        Long playerId = GameContext.getPlayerId();
+//        Long battleId = GameContext.getBattleId();
+        if (playerId == null) {
             throw new BusinessException(ResultCode.PRECONDITION_FAILED);
         }
         List<PlayerActionInfo> playerActionInfoList = new ArrayList<>();
@@ -67,13 +66,13 @@ public class ActionServiceImpl implements ActionService {
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            Map<String, Object> batch = new HashMap<>();
-                            String key = RedisKeyConstants.PLAYER_ACTION.getKey(battleId);
-                            for (PlayerActionInfo p : playerActionInfoList) {
-                                Map<String, Object> map = MapUtil.paToMap(p);
-                                batch.put(p.getId().toString(), map);
-                            }
-                            redisUtil.hashPutAll(key, batch);
+//                            Map<String, Object> batch = new HashMap<>();
+//                            String key = RedisKeyConstants.PLAYER_ACTION.getKey(battleId);
+//                            for (PlayerActionInfo p : playerActionInfoList) {
+//                                Map<String, Object> map = MapUtil.paToMap(p);
+//                                batch.put(p.getId().toString(), map);
+//                            }
+//                            redisUtil.hashPutAll(key, batch);
                         }
                     }
             );

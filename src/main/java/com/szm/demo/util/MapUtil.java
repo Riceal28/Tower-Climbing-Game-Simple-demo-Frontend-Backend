@@ -8,13 +8,53 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MapUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(MapUtil.class);
 
+    private static LocalDateTime convertToTime(Object timeObj) {
+        // 1. 空值直接返回 null
+        if (timeObj == null) {
+            return null;
+        }
+        // 2. 如果已经是 LocalDateTime，直接返回
+        if (timeObj instanceof LocalDateTime) {
+            return (LocalDateTime) timeObj;
+        }
+        try {
+            String timeStr = timeObj.toString().trim();
+            // 3. 处理数组格式：[2026, 4, 22, 11, 6, 28, 733880500]
+            if (timeStr.startsWith("[") && timeStr.endsWith("]")) {
+                List<Integer> parts = Arrays.stream(
+                                timeStr.substring(1, timeStr.length() - 1).split(",")
+                        )
+                        .map(String::trim)
+                        .map(Integer::parseInt)
+                        .collect(Collectors.toList());
+                // 数组格式 → 组装成 LocalDateTime
+                return LocalDateTime.of(
+                        parts.get(0),    // 年
+                        parts.get(1),    // 月
+                        parts.get(2),    // 日
+                        parts.get(3),    // 时
+                        parts.get(4),    // 分
+                        parts.get(5),    // 秒
+                        parts.size() > 6 ? parts.get(6) : 0 // 纳秒（可选）
+                );
+            }
+            // 4. 标准字符串格式（兼容绝大多数情况）
+            return LocalDateTime.parse(timeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } catch (Exception e) {
+            return null;
+        }
+    }
     public static UserPlayerInfo mapToPlayer(Map<String, Object> map) {
         if (map.isEmpty()) {
             logger.error("Map转换角色对象异常:空Map");
@@ -29,8 +69,8 @@ public class MapUtil {
         userPlayerInfo.setAttackBase(((Number) map.get("attackBase")).intValue());
         userPlayerInfo.setCurrentHp(((Number) map.get("currentHp")).intValue());
         userPlayerInfo.setCurrentMp(((Number) map.get("currentMp")).intValue());
-        userPlayerInfo.setCreateTime((LocalDateTime) map.get("createTime"));
-        userPlayerInfo.setUpdateTime((LocalDateTime) map.get("updateTime"));
+        userPlayerInfo.setCreateTime(convertToTime(map.get("createTime")));
+        userPlayerInfo.setUpdateTime(convertToTime(map.get("updateTime")));
         return userPlayerInfo;
     }
 
@@ -69,8 +109,8 @@ public class MapUtil {
         saveInfo.setFloor(((Number) map.get("floor")).intValue());
         saveInfo.setBattleOrder(((Number) map.get("battleOrder")).intValue());
         saveInfo.setProgress(((Number) map.get("progress")).intValue());
-        saveInfo.setCreateTime((LocalDateTime) map.get("createTime"));
-        saveInfo.setUpdateTime((LocalDateTime) map.get("updateTime"));
+        saveInfo.setCreateTime(convertToTime(map.get("createTime")));
+        saveInfo.setUpdateTime(convertToTime(map.get("updateTime")));
         return saveInfo;
     }
 
@@ -110,8 +150,8 @@ public class MapUtil {
         battleInfo.setMonsterCurrentHp(((Number) map.get("monsterCurrentHp")).intValue());
         battleInfo.setMonsterCurrentMp(((Number) map.get("monsterCurrentMp")).intValue());
         battleInfo.setMonsterCurrentDefend(((Number) map.get("monsterCurrentDefend")).intValue());
-        battleInfo.setCreateTime((LocalDateTime) map.get("createTime"));
-        battleInfo.setUpdateTime((LocalDateTime) map.get("updateTime"));
+        battleInfo.setCreateTime(convertToTime(map.get("createTime")));
+        battleInfo.setUpdateTime(convertToTime(map.get("updateTime")));
         return battleInfo;
     }
 
@@ -147,8 +187,8 @@ public class MapUtil {
         playerActionInfo.setActionId(((Number) map.get("actionId")).longValue());
         playerActionInfo.setCurrentCd(((Number) map.get("currentCd")).intValue());
         playerActionInfo.setRestContinueRound(((Number) map.get("restContinueRound")).intValue());
-        playerActionInfo.setCreateTime((LocalDateTime) map.get("createTime"));
-        playerActionInfo.setUpdateTime((LocalDateTime) map.get("updateTime"));
+        playerActionInfo.setCreateTime(convertToTime(map.get("createTime")));
+        playerActionInfo.setUpdateTime(convertToTime(map.get("updateTime")));
         return playerActionInfo;
     }
 
@@ -182,8 +222,8 @@ public class MapUtil {
         monsterActionInfo.setActionId(((Number) map.get("actionId")).longValue());
         monsterActionInfo.setCurrentCd(((Number) map.get("currentCd")).intValue());
         monsterActionInfo.setRestContinueRound(((Number) map.get("restContinueRound")).intValue());
-        monsterActionInfo.setCreateTime((LocalDateTime) map.get("createTime"));
-        monsterActionInfo.setUpdateTime((LocalDateTime) map.get("updateTime"));
+        monsterActionInfo.setCreateTime(convertToTime(map.get("createTime")));
+        monsterActionInfo.setUpdateTime(convertToTime(map.get("updateTime")));
         return monsterActionInfo;
     }
 

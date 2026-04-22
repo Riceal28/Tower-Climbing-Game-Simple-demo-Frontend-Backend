@@ -11,8 +11,11 @@ public interface PlayerActionInfoMapper {
     @Select("SELECT * FROM player_action_info WHERE battle_id=#{battleId}")
     List<PlayerActionInfo> getByBattleId(@Param("battleId") Long battleId);
 
+    @Select("SELECT * FROM player_action_info WHERE player_id=#{playerId}")
+    List<PlayerActionInfo> getByPlayerId(@Param("playerId") Long playerId);
+
     @Select("SELECT * FROM player_action_info WHERE id=#{id}")
-    PlayerActionInfo getById(@Param("id")Long id);
+    PlayerActionInfo getById(@Param("id") Long id);
 
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     @Insert("INSERT INTO player_action_info (battle_id, player_id, action_id, current_cd, " +
@@ -28,7 +31,7 @@ public interface PlayerActionInfoMapper {
                     "create_time,update_time) ",
             "VALUES ",
             "<foreach collection='playerActionInfoList' item='item' separator=','>",
-            "(#{item.battleId}, #{item.userId}, #{item.actionId}, #{item.currentCd}, #{item.restContinueRound},#{item.createTime},#{item.updateTime})",
+            "(#{item.battleId}, #{item.playerId}, #{item.actionId}, #{item.currentCd}, #{item.restContinueRound},#{item.createTime},#{item.updateTime})",
             "</foreach>",
             "</script>"
     })
@@ -42,23 +45,23 @@ public interface PlayerActionInfoMapper {
     @Update("""
             <script>
             UPDATE player_action_info
-            <set>
-                <foreach collection="list" item="pa" separator="">
-                    current_cd =
-                    CASE id
-                        WHEN #{pa.id} THEN #{pa.currentCd}
-                    END,
-                </foreach>
+            SET
+                current_cd = CASE
+                    <foreach collection="list" item="pa">
+                        WHEN id = #{pa.id} THEN #{pa.currentCd}
+                    </foreach>
+                    ELSE current_cd
+                END,
             
-                <foreach collection="list" item="pa" separator="">
-                    rest_continue_round =
-                    CASE id
-                        WHEN #{pa.id} THEN #{pa.restContinueRound}
-                    END,
-                </foreach>
+                rest_continue_round = CASE
+                    <foreach collection="list" item="pa">
+                        WHEN id = #{pa.id} THEN #{pa.restContinueRound}
+                    </foreach>
+                    ELSE rest_continue_round
+                END,
             
                 update_time = CURRENT_TIMESTAMP
-            </set>
+            
             WHERE id IN
             <foreach collection="list" item="pa" open="(" separator="," close=")">
                 #{pa.id}
@@ -76,7 +79,7 @@ public interface PlayerActionInfoMapper {
             </foreach>
             </script>
             """)
-    int updateBattleIdBatch(@Param("list") List<PlayerActionInfo> list);
+    int updateBattleIdBatch(@Param("list") List<PlayerActionInfo> list, @Param("battleId") Long battleId);
 
     @Delete("DELETE FROM player_action_info WHERE battle_id=#{battleId}")
     int deleteByBattleId(@Param("battleId") Long battleId);

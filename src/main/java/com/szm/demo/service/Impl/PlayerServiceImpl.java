@@ -5,7 +5,9 @@ import com.szm.demo.common.PlayerClass;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.context.GameContext;
+import com.szm.demo.dto.PlayerCreateResp;
 import com.szm.demo.dto.PlayerShowResp;
+import com.szm.demo.dto.SaveLoadResp;
 import com.szm.demo.entity.ActionInfo;
 import com.szm.demo.entity.LevelInfo;
 import com.szm.demo.entity.SaveInfo;
@@ -52,7 +54,7 @@ public class PlayerServiceImpl implements PlayerService {
 
     @Override
     @Transactional//抛出异常自动回滚
-    public void createPlayer(PlayerClass playerClass) {
+    public PlayerCreateResp createPlayer(PlayerClass playerClass) {
         Long userId = GameContext.getUserId();
         if (userId == null) {
             throw new BusinessException(ResultCode.PRECONDITION_FAILED);
@@ -72,7 +74,7 @@ public class PlayerServiceImpl implements PlayerService {
             userPlayerInfoMapper.insert(userPlayerInfo);
             Long playerId = userPlayerInfo.getId();
 
-            actionService.addDefaultAction();
+            actionService.addDefaultAction(playerId);
 
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
@@ -85,6 +87,9 @@ public class PlayerServiceImpl implements PlayerService {
                     }
             );
             logger.info("用户ID[{}]:创建角色成功", userId);
+            PlayerCreateResp resp = new PlayerCreateResp();
+            resp.setPlayerId(playerId);
+            return resp;
         } catch (Exception e) {
             logger.error("用户ID[{}]:创建角色失败", userId, e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
@@ -94,12 +99,15 @@ public class PlayerServiceImpl implements PlayerService {
 
     @Override
     @Transactional
-    public void updatePlayerBySave(SaveInfo saveInfo) {
+    public SaveLoadResp updatePlayerBySave(SaveInfo saveInfo) {
         if (saveInfo == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
         UserPlayerInfo userPlayerInfo = saveToPlayer(saveInfo);
         playerProviderService.updatePlayerInfo(userPlayerInfo);
+        SaveLoadResp resp = new SaveLoadResp();
+        resp.setId(saveInfo.getId());
+        return resp;
     }
 
     private UserPlayerInfo saveToPlayer(SaveInfo saveInfo) {
@@ -120,7 +128,7 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override//todo:待优化
-    public PlayerShowResp showPlayer() {
+    public PlayerShowResp showOnePlayer() {
         Long playerId = GameContext.getPlayerId();
         if (playerId == null) {
             throw new BusinessException(ResultCode.PRECONDITION_FAILED);
@@ -131,6 +139,7 @@ public class PlayerServiceImpl implements PlayerService {
             resp = new PlayerShowResp();
             UserPlayerInfo userPlayerInfo = playerProviderService.getPlayerInfo();
             LevelInfo levelInfo = levelService.getLevelInfo(userPlayerInfo.getPlayerClass(), userPlayerInfo.getLevel());
+            resp.setId(userPlayerInfo.getId());
             resp.setPlayerClass(userPlayerInfo.getPlayerClass());
             resp.setLevel(userPlayerInfo.getLevel());
             resp.setMaxHp(levelInfo.getMaxHp());
@@ -141,6 +150,33 @@ public class PlayerServiceImpl implements PlayerService {
         }
         return resp;
     }
+
+    @Override//todo:待优化
+    public List<PlayerShowResp> showAllPlayer() {
+        Long userId = GameContext.getUserId();
+        if (userId == null) {
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
+        List<PlayerShowResp> respList = new ArrayList<>();
+        List<UserPlayerInfo> list = playerProviderService.getPlayerInfoByUserId();
+        if(list.isEmpty()){
+            return Collections.emptyList();
+        }
+        for(UserPlayerInfo u : list){
+            LevelInfo levelInfo = levelService.getLevelInfo(u.getPlayerClass(), u.getLevel());
+            PlayerShowResp resp = new PlayerShowResp();
+            resp.setId(u.getId());
+            resp.setPlayerClass(u.getPlayerClass());
+            resp.setLevel(u.getLevel());
+            resp.setMaxHp(levelInfo.getMaxHp());
+            resp.setMaxMp(levelInfo.getMaxMp());
+            resp.setAttackBase(levelInfo.getAttackBase());
+            resp.setExp(u.getExp());
+            respList.add(resp);
+        }
+        return respList;
+    }
+
 
     @Override
     @Transactional

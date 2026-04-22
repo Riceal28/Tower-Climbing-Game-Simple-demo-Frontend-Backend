@@ -104,6 +104,7 @@ public class TowerServiceImpl implements TowerService {
             if (towerFloorMonsterInfo != null) {
                 return towerFloorMonsterInfo;
             }
+            logger.info("查询楼层信息floor[{}],order[{}]",floor,battleOrder);
             towerFloorMonsterInfo = towerMapper.getOneDetailByOrder(floor, battleOrder);
             if (towerFloorMonsterInfo == null) {
                 throw new BusinessException(ResultCode.NOT_FOUND, "未配置该楼层及序号详细信息");

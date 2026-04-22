@@ -2,8 +2,10 @@ package com.szm.demo.controller;
 
 import com.szm.demo.common.ApiConstant;
 import com.szm.demo.common.Result;
+import com.szm.demo.dto.SaveLoadResp;
 import com.szm.demo.entity.SaveInfo;
 import com.szm.demo.service.PlayerService;
+import com.szm.demo.service.SaveProviderService;
 import com.szm.demo.service.SaveService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,8 @@ public class SaveController {
 
     @Autowired
     PlayerService playerService;
+    @Autowired
+    private SaveProviderService saveProviderService;
 
 
     @PostMapping("/create")
@@ -33,6 +37,12 @@ public class SaveController {
         return Result.success(saveInfoList);
     }
 
+    @GetMapping("/showallp")
+    public Result<List<SaveInfo>> getSavesByP(){
+        List<SaveInfo> saveInfoList = saveService.getSaveByPlayerId();
+        return Result.success(saveInfoList);
+    }
+
     @GetMapping("/show")
     public Result<SaveInfo> getOneSave(){
         SaveInfo saveInfo = saveService.getSaveById();
@@ -41,14 +51,14 @@ public class SaveController {
 
     @PostMapping("/save")
     public Result<String> saveSave(@RequestBody SaveInfo saveInfo){
-        saveService.updateSave(saveInfo);
+        saveProviderService.updateSave(saveInfo);
         return Result.success("保存成功");
     }
 
     @PostMapping("/load")
-    public Result<String> loadSave(@RequestBody SaveInfo saveInfo){
-        playerService.updatePlayerBySave(saveInfo);
-        return Result.success("加载成功");
+    public Result<SaveLoadResp> loadSave(@RequestBody SaveInfo saveInfo){
+        SaveLoadResp resp = playerService.updatePlayerBySave(saveInfo);
+        return Result.success(resp);
     }
 
 }

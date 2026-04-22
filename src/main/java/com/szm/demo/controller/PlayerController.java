@@ -3,6 +3,7 @@ package com.szm.demo.controller;
 import com.szm.demo.common.ApiConstant;
 import com.szm.demo.common.PlayerClass;
 import com.szm.demo.common.Result;
+import com.szm.demo.dto.PlayerCreateResp;
 import com.szm.demo.dto.PlayerShowResp;
 import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.service.PlayerProviderService;
@@ -10,6 +11,8 @@ import com.szm.demo.service.PlayerService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(path = ApiConstant.API_PLAYER)
@@ -20,15 +23,20 @@ public class PlayerController {
     @Autowired
     private PlayerProviderService playerProviderService;
 
+    @GetMapping("/showall")
+    public Result<List<PlayerShowResp>> showAllPlayer(){
+        return Result.success(playerService.showAllPlayer());
+    }
+
     @GetMapping("/showbase")
     public Result<PlayerShowResp> showPlayer() {
-        return Result.success(playerService.showPlayer());
+        return Result.success(playerService.showOnePlayer());
     }
 
     @PostMapping("/create")
-    public Result<String> createPlayer(@RequestBody PlayerClass playerClass) {
-        playerService.createPlayer(playerClass);
-        return Result.success("创建角色成功");
+    public Result<PlayerCreateResp> createPlayer(@RequestBody PlayerClass playerClass) {
+        PlayerCreateResp resp = playerService.createPlayer(playerClass);
+        return Result.success(resp);
     }
 
     @PostMapping("/levelup")

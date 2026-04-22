@@ -3,12 +3,21 @@ package com.szm.demo.dto;
 import com.szm.demo.common.PlayerClass;
 
 public class PlayerShowResp {
+    private Long id;
     private PlayerClass playerClass;
     private Integer level;
     private Long exp;
     private Integer attackBase;
     private Integer maxHp;
     private Integer maxMp;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public PlayerClass getPlayerClass() {
         return playerClass;

@@ -79,7 +79,7 @@ public interface MonsterActionInfoMapper {
             </foreach>
             </script>
             """)
-    int updateBattleIdBatch(@Param("list") List<MonsterActionInfo> list);
+    int updateBattleIdBatch(@Param("list") List<MonsterActionInfo> list,@Param("battleId")Long battleId);
 
     @Delete("DELETE FROM monster_action_info WHERE battle_id=#{battleId}")
     int deleteByBattleId(@Param("battleId") Long battleId);

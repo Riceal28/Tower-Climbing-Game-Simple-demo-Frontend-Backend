@@ -29,7 +29,7 @@ public class UserController {
 
     @PostMapping("/login")
     public Result<UserLoginResp> login(@RequestBody UserLoginReq req) {
-        UserLoginResp resp = new UserLoginResp(userService.login(req));
+        UserLoginResp resp = userService.login(req);
         return Result.success("登录成功", resp);
     }
 

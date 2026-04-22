@@ -4,14 +4,12 @@ import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.context.GameContext;
+import com.szm.demo.entity.BattleInfo;
 import com.szm.demo.entity.LevelInfo;
 import com.szm.demo.entity.SaveInfo;
 import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.mapper.SaveInfoMapper;
-import com.szm.demo.service.LevelService;
-import com.szm.demo.service.PlayerProviderService;
-import com.szm.demo.service.PlayerService;
-import com.szm.demo.service.SaveService;
+import com.szm.demo.service.*;
 import com.szm.demo.util.MapUtil;
 import com.szm.demo.util.RedisUtil;
 import org.slf4j.Logger;
@@ -41,6 +39,8 @@ public class SaveServiceImpl implements SaveService {
     SaveInfoMapper saveInfoMapper;
     @Autowired
     private LevelService levelService;
+    @Autowired
+    private SaveProviderService saveProviderService;
 
     /**
      * 创建默认存档
@@ -146,6 +146,26 @@ public class SaveServiceImpl implements SaveService {
     }
 
     /**
+     * 根据用户ID获取SaveInfo列表
+     * {SAVE_LIST -> setMembers, SAVE_DETAIL -> hashEntries} ->
+     * IF Empty -> [SELECT] -> List-SaveInfo ->
+     * {SAVE_LIST -> setAdd, SAVE_DETAIL -> hashPutAll}
+     *
+     * @return List-SaveInfo
+     */
+    @Override
+    //todo:try包围
+    public List<SaveInfo> getSaveByPlayerId() {
+        Long playerId = GameContext.getPlayerId();
+        if (playerId == null) {
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
+        List<SaveInfo> saveInfoList = saveInfoMapper.getByPlayerId(playerId);
+        logger.info("当前角色ID[{}]角色存档列表[{}]",playerId,saveInfoList);
+        return saveInfoList;
+    }
+
+    /**
      * 根据用户ID,存档ID获取指定存档
      * {SAVE_DETAIL -> hashEntries} ->
      * IF EMPTY -> [SELECT] -> SaveInfo ->
@@ -180,44 +200,19 @@ public class SaveServiceImpl implements SaveService {
     }
 
     /**
-     * 更新存档
-     * SaveInfo -> [UPDATE] ->
-     * {SAVE_LIST -> setAdd, SAVE_DETAIL -> hashPutAll}
-     *
-     * @param saveInfo 修改后的存档
+     * 保存当前战斗胜利后的存档
      */
     @Override
-    @Transactional//todo:设置过期时间
-    public void updateSave(SaveInfo saveInfo) {
-        Long userId = GameContext.getUserId();
-        Long playerId = GameContext.getPlayerId();
-        if (playerId == null || userId == null) {//todo:优化判断逻辑
-            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
-        }
-        if (saveInfo == null) {
-            throw new BusinessException(ResultCode.BAD_REQUEST);
-        }
-        if (!Objects.equals(saveInfo.getPlayerId(), playerId)) {
-            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
-        }
-        try {
-            saveInfoMapper.updateSaveById(saveInfo);
-            TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            String key = RedisKeyConstants.SAVE_LIST.getKey(userId);
-                            redisUtil.setAdd(key, saveInfo.getId());
-                            String key2 = RedisKeyConstants.
-                                    SAVE_DETAIL.getKey(userId, saveInfo.getId());
-                            Map<String, Object> map = MapUtil.saveInfoToMap(saveInfo);
-                            redisUtil.hashPutAll(key2, map);
-                        }
-                    }
-            );
-        } catch (Exception e) {
-            logger.error("用户ID[{}]:更新存档失败", saveInfo.getUserId(), e);
-            throw new BusinessException(ResultCode.SYSTEM_ERROR);
-        }
+    public void saveAfterWin(BattleInfo battleInfo) {
+        UserPlayerInfo userPlayerInfo = playerProviderService.getPlayerInfo();
+        SaveInfo saveInfo = getSaveById();
+        saveInfo.setLevel(userPlayerInfo.getLevel());
+        saveInfo.setExp(userPlayerInfo.getExp());
+        saveInfo.setCurrentHp(userPlayerInfo.getCurrentHp());
+        saveInfo.setCurrentMp(userPlayerInfo.getCurrentMp());
+        saveInfo.setBattleOrder(saveInfo.getBattleOrder() + 1);
+        saveInfo.setUpdateTime(LocalDateTime.now());
+        logger.info("saveInfo{}",saveInfo);
+        saveProviderService.updateSave(saveInfo);
     }
 }

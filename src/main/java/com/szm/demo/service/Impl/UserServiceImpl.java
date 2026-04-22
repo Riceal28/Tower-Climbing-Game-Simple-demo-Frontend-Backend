@@ -5,6 +5,7 @@ import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.dto.UserLoginReq;
+import com.szm.demo.dto.UserLoginResp;
 import com.szm.demo.dto.UserRegisterReq;
 import com.szm.demo.entity.UserPlayerInfo;
 import com.szm.demo.entity.UserInfo;
@@ -56,11 +57,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String login(UserLoginReq req) {
+    public UserLoginResp login(UserLoginReq req) {
         if (req == null || req.getUsername().isBlank()
                 || req.getPassword().isBlank()) {
             throw new BusinessException(ResultCode.BAD_REQUEST);
         }
+        UserLoginResp userLoginResp = new UserLoginResp();
         //todo:登录限流(redis或其他) 低优先级
         UserInfo userInfo = userInfoMapper.getByUsername(req.getUsername());
         if (userInfo == null) {
@@ -74,7 +76,9 @@ public class UserServiceImpl implements UserService {
         String key = RedisKeyConstants.USER_TOKEN_IN.getKey(jti);
         redisUtil.set(key, "1", 1440, TimeUnit.MINUTES);
         logger.info("User: {} 登录成功, token:{}", userInfo.getUsername(), token);
-        return token;
+        userLoginResp.setUserId(userInfo.getId());
+        userLoginResp.setToken(token);
+        return userLoginResp;
     }
 
     @Override

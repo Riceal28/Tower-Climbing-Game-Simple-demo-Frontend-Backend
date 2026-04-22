@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { userService } from '../api/userService'
+import { gameContext } from '../api/gameContext'
 
 const router = useRouter()
 
@@ -30,6 +31,12 @@ const handleLogin = async () => {
       // Save token to localStorage
       const token = response.data.data.token
       localStorage.setItem('token', token)
+      // 初始化游戏上下文
+      const userId = response.data.data.userId
+      if (userId) {
+        localStorage.setItem('userId', String(userId))
+        gameContext.init(userId)
+      }
       ElMessage.success('登录成功')
       // Redirect to home page
       router.push('/home')

@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS user_info
   COMMENT = '用户信息表';
 
 -- 用户详情表, 用户展示详细信息(状态)
-CREATE TABLE IF NOT EXISTS user_palyer_info
+CREATE TABLE IF NOT EXISTS user_player_info
 (
     id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID(角色ID)',
     user_id         BIGINT UNSIGNED NOT NULL COMMENT '关联用户ID',
@@ -42,8 +42,7 @@ CREATE TABLE IF NOT EXISTS level_info
     max_mp          INT        NOT NULL COMMENT '法力值上限',
     attack_base     INT        NOT NULL COMMENT '基础攻击力',
     create_time     DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time     DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    INDEX           idx_level (level) COMMENT '等级索引'
+    update_time     DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COMMENT = '等级信息表';
@@ -112,7 +111,18 @@ CREATE TABLE IF NOT EXISTS action_info
   DEFAULT CHARSET = utf8mb4
   COMMENT = '技能信息表';
 
--- 角色技能关联表, 用于关联角色与技能
+CREATE TABLE IF NOT EXISTS player_action_group
+(
+    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    level_id           BIGINT UNSIGNED NOT NULL COMMENT '等级ID',
+    action_id           BIGINT UNSIGNED NOT NULL COMMENT '技能ID',
+    create_time         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE = InnoDB
+    DEFAULT CHARSET = utf8mb4
+    COMMENT = '角色技能关联表';
+
+-- 角色技能关联表, 用于展示角色技能详情
 CREATE TABLE IF NOT EXISTS player_action_info
 (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
@@ -125,7 +135,7 @@ CREATE TABLE IF NOT EXISTS player_action_info
     update_time         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
-  COMMENT = '角色技能关联表';
+  COMMENT = '角色技能详情表';
 
 -- 魔物信息表, 用于定义魔物相关信息
 CREATE TABLE IF NOT EXISTS monster_info
@@ -145,8 +155,19 @@ CREATE TABLE IF NOT EXISTS monster_info
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COMMENT = '魔物信息表';
+-- 魔物技能关联表, 用于关联魔物的技能组
+CREATE TABLE  IF NOT EXISTS monster_action_group
+(
+    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    monster_id          BIGINT UNSIGNED NOT NULL COMMENT '魔物ID',
+    action_id           BIGINT UNSIGNED NOT NULL COMMENT '技能ID',
+    create_time         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE = InnoDB
+    DEFAULT CHARSET = utf8mb4
+    COMMENT = '魔物技能关联表';
 
--- 魔物技能关联表, 用于关联魔物的技能组//todo:逻辑bug 技能组应该为静态信息
+-- 魔物技能关联表, 用于记录魔物的技能组详情
 CREATE TABLE IF NOT EXISTS monster_action_info
 (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
@@ -159,7 +180,7 @@ CREATE TABLE IF NOT EXISTS monster_action_info
     update_time         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
-  COMMENT = '魔物技能关联表';
+  COMMENT = '魔物技能详情表';
 
 -- 塔信息表, 存储各楼层基本信息
 CREATE TABLE IF NOT EXISTS tower_floor_info

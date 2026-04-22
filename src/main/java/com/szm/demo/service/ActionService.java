@@ -7,7 +7,7 @@ import com.szm.demo.entity.PlayerActionInfo;
 import java.util.List;
 
 public interface ActionService {
-    void addDefaultAction();
+    void addDefaultAction(Long playerId);
     ActionInfo getActionByAId(Long actionId);
     PlayerActionInfo getPaById(Long id);
     void updatePaOne(PlayerActionInfo playerActionInfo);

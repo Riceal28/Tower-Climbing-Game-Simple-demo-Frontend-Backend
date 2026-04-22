@@ -2,7 +2,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { playerService } from '../api/userService'
+import { playerService, PlayerClass, PlayerShowResp } from '../api/userService'
+import { gameContext } from '../api/gameContext'
 
 interface PlayerInfo {
   level: number
@@ -12,45 +13,125 @@ interface PlayerInfo {
   currentHp: number
   maxMp: number
   currentMp: number
+  playerClass: string
+  id?: number
 }
+
+// 职阶定义
+const playerClasses = [
+  {
+    value: PlayerClass.SABER,
+    name: '剑士',
+    icon: '⚔️',
+    desc: '平衡型战士，攻防兼备',
+    color: '#e74c3c'
+  },
+  {
+    value: PlayerClass.ARCHER,
+    name: '弓兵',
+    icon: '🏹',
+    desc: '敏捷型输出，高暴击率',
+    color: '#27ae60'
+  },
+  {
+    value: PlayerClass.CASTER,
+    name: '魔法师',
+    icon: '🔮',
+    desc: '智力型输出，高魔法伤害',
+    color: '#9b59b6'
+  }
+]
 
 const router = useRouter()
 const loading = ref(true)
+const playerList = ref<PlayerShowResp[]>([])
 const playerInfo = ref<PlayerInfo | null>(null)
-const playerExists = ref(false)
+const viewState = ref<'list' | 'detail'>('list') // 'list' 显示列表，'detail' 显示详情
+const selectedPlayerId = ref<number | null>(null)
 const creating = ref(false)
+const showClassDialog = ref(false)
+const selectedClass = ref<typeof playerClasses[0] | null>(null)
 
 const goHome = () => {
   router.push('/home')
 }
 
-const loadPlayerInfo = async () => {
+// 加载所有角色列表
+const loadPlayerList = async () => {
   loading.value = true
   try {
-    const response = await playerService.getPlayerInfo()
+    const response = await playerService.getPlayerAll()
     if (response.data.success) {
-      playerInfo.value = response.data.data
-      playerExists.value = true
+      playerList.value = response.data.data
     } else {
-      playerInfo.value = null
-      playerExists.value = false
+      ElMessage.error(response.data.message || '加载角色列表失败')
+      playerList.value = []
     }
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || '加载玩家信息失败')
-    playerExists.value = false
+    ElMessage.error(error.response?.data?.message || '加载角色列表失败')
+    playerList.value = []
   } finally {
     loading.value = false
   }
 }
 
+// 选择一个角色，加载其详细信息
+const selectPlayer = async (player: PlayerShowResp) => {
+  try {
+    // 将 playerId 放入 GameContext
+    gameContext.setPlayerId(player.id)
+    localStorage.setItem('playerId', String(player.id))
+    selectedPlayerId.value = player.id
+
+    // 调用 showbase 获取选中角色的详细信息
+    const response = await playerService.getPlayerBaseInfo()
+    if (response.data.success) {
+      const data = response.data.data
+      playerInfo.value = {
+        level: data.level,
+        exp: data.exp,
+        attackBase: data.attackBase,
+        maxHp: data.maxHp,
+        currentHp: data.currentHp,
+        maxMp: data.maxMp,
+        currentMp: data.currentMp,
+        playerClass: data.playerClass,
+        id: data.id
+      }
+      viewState.value = 'detail'
+    } else {
+      ElMessage.error(response.data.message || '加载角色详情失败')
+    }
+  } catch (error: any) {
+    ElMessage.error(error.response?.data?.message || '加载角色详情失败')
+  }
+}
+
+// 返回到角色列表
+const backToList = () => {
+  viewState.value = 'list'
+  selectedPlayerId.value = null
+}
+
+const openClassDialog = () => {
+  selectedClass.value = null
+  showClassDialog.value = true
+}
+
 const handleCreatePlayer = async () => {
+  if (!selectedClass.value) {
+    ElMessage.warning('请选择一个职阶')
+    return
+  }
+  
   creating.value = true
   try {
-    const response = await playerService.createPlayer()
+    const response = await playerService.createPlayer(selectedClass.value.value)
     if (response.data.success) {
-      ElMessage.success('角色创建成功！')
-      // 重新加载玩家信息
-      await loadPlayerInfo()
+      ElMessage.success(`${selectedClass.value.icon} ${selectedClass.value.name}创建成功！`)
+      showClassDialog.value = false
+      // 重新加载角色列表
+      await loadPlayerList()
     } else {
       ElMessage.error(response.data.message || '角色创建失败')
     }
@@ -62,7 +143,7 @@ const handleCreatePlayer = async () => {
 }
 
 onMounted(() => {
-  loadPlayerInfo()
+  loadPlayerList()
 })
 
 const hpPercentage = () => {
@@ -74,6 +155,24 @@ const mpPercentage = () => {
   if (!playerInfo.value) return 0
   return Math.round((playerInfo.value.currentMp / playerInfo.value.maxMp) * 100)
 }
+
+// 获取职阶名称
+const getClassName = (playerClass: string) => {
+  const cls = playerClasses.find(c => c.value === playerClass)
+  return cls ? cls.name : playerClass
+}
+
+// 获取职阶图标
+const getClassIcon = (playerClass: string) => {
+  const cls = playerClasses.find(c => c.value === playerClass)
+  return cls ? cls.icon : '❓'
+}
+
+// 获取职阶颜色
+const getClassColor = (playerClass: string) => {
+  const cls = playerClasses.find(c => c.value === playerClass)
+  return cls ? cls.color : '#999'
+}
 </script>
 
 <template>
@@ -81,7 +180,7 @@ const mpPercentage = () => {
     <el-button class="back-button" circle type="default" @click="goHome">❮</el-button>
 
     <div class="player-header">
-      <h1>角色信息</h1>
+      <h1>{{ viewState === 'list' ? '角色选择' : '角色信息' }}</h1>
     </div>
 
     <!-- 加载状态 -->
@@ -89,12 +188,57 @@ const mpPercentage = () => {
       <el-skeleton :rows="6" animated />
     </div>
 
-    <!-- 角色存在 -->
-    <div v-else-if="playerExists && playerInfo" class="player-card-container">
+    <!-- 角色列表视图 -->
+    <div v-else-if="viewState === 'list'" class="player-list-container">
+      <!-- 有角色的情况 -->
+      <div v-if="playerList.length > 0" class="player-cards-grid">
+        <div
+          v-for="player in playerList"
+          :key="player.id"
+          class="player-card-item"
+          :style="{ '--class-color': getClassColor(player.playerClass) }"
+          @click="selectPlayer(player)"
+        >
+          <div class="card-icon">{{ getClassIcon(player.playerClass) }}</div>
+          <div class="card-name">{{ getClassName(player.playerClass) }}</div>
+          <div class="card-level">Lv.{{ player.level }}</div>
+          <div class="card-exp">EXP: {{ player.exp }}</div>
+          <div class="card-hp">❤️ {{ player.currentHp }}/{{ player.maxHp }}</div>
+          <div class="card-mp">💙 {{ player.currentMp }}/{{ player.maxMp }}</div>
+          <div class="card-arrow">→</div>
+        </div>
+      </div>
+
+      <!-- 没有角色的情况 -->
+      <div v-else class="create-player-state">
+        <div class="create-prompt">
+          <div class="game-icon">🎮</div>
+          <h2>冒险等待中...</h2>
+          <p>您还没有创建角色，让我们开始一场新的冒险吧！</p>
+          <el-button
+            type="primary"
+            size="large"
+            @click="openClassDialog"
+            :loading="creating"
+            class="create-button"
+          >
+            ✨ 创建角色
+          </el-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 角色详情视图 -->
+    <div v-else-if="viewState === 'detail' && playerInfo" class="player-card-container">
+      <el-button class="back-to-list-button" @click="backToList">← 返回列表</el-button>
+      
       <el-card class="player-card">
         <template #header>
           <div class="card-header">
-            <span>等级 {{ playerInfo.level }}</span>
+            <span>{{ getClassName(playerInfo.playerClass) }} Lv.{{ playerInfo.level }}</span>
+            <span class="class-badge" :style="{ backgroundColor: getClassColor(playerInfo.playerClass) }">
+              {{ getClassIcon(playerInfo.playerClass) }}
+            </span>
           </div>
         </template>
 
@@ -135,23 +279,35 @@ const mpPercentage = () => {
       </el-card>
     </div>
 
-    <!-- 角色不存在 -->
-    <div v-else class="create-player-state">
-      <div class="create-prompt">
-        <div class="game-icon">🎮</div>
-        <h2>冒险等待中...</h2>
-        <p>您还没有创建角色，让我们开始一场新的冒险吧！</p>
-        <el-button
-          type="primary"
-          size="large"
-          @click="handleCreatePlayer"
-          :loading="creating"
-          class="create-button"
+    <!-- 职阶选择对话框 -->
+    <el-dialog
+      v-model="showClassDialog"
+      title="选择你的职阶"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <div class="class-selection">
+        <div
+          v-for="cls in playerClasses"
+          :key="cls.value"
+          class="class-card"
+          :class="{ selected: selectedClass?.value === cls.value }"
+          :style="{ '--class-color': cls.color }"
+          @click="selectedClass = cls"
         >
-          ✨ 创建角色
-        </el-button>
+          <div class="class-icon">{{ cls.icon }}</div>
+          <div class="class-name">{{ cls.name }}</div>
+          <div class="class-desc">{{ cls.desc }}</div>
+          <div v-if="selectedClass?.value === cls.value" class="selected-badge">已选择</div>
+        </div>
       </div>
-    </div>
+      <template #footer>
+        <el-button @click="showClassDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleCreatePlayer" :loading="creating" :disabled="!selectedClass">
+          确认创建
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -185,6 +341,10 @@ const mpPercentage = () => {
   background-color: #e6e6e6;
 }
 
+.back-to-list-button {
+  margin-bottom: 20px;
+}
+
 .player-header {
   text-align: center;
   color: white;
@@ -198,9 +358,112 @@ const mpPercentage = () => {
 }
 
 .loading-state {
-  max-width: 500px;
+  max-width: 900px;
   margin: 0 auto;
   width: 100%;
+}
+
+/* 角色列表容器 */
+.player-list-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.player-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.player-card-item {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-left: 4px solid var(--class-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.player-card-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0) 0%, rgba(102, 126, 234, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.player-card-item:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.player-card-item:hover::before {
+  opacity: 1;
+}
+
+.card-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.card-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.card-level {
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.card-exp {
+  font-size: 12px;
+  color: #999;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.card-hp {
+  font-size: 13px;
+  color: #e74c3c;
+  margin-bottom: 4px;
+}
+
+.card-mp {
+  font-size: 13px;
+  color: #409eff;
+  margin-bottom: 12px;
+}
+
+.card-arrow {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  font-size: 24px;
+  color: var(--class-color);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.player-card-item:hover .card-arrow {
+  opacity: 1;
 }
 
 .player-card-container {
@@ -323,5 +586,94 @@ const mpPercentage = () => {
 .create-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+}
+
+/* 职阶选择 */
+.class-selection {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.class-card {
+  flex: 1;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 2px solid #dee2e6;
+  border-radius: 12px;
+  padding: 20px 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.class-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--class-color);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.class-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  border-color: var(--class-color);
+}
+
+.class-card:hover::before {
+  opacity: 1;
+}
+
+.class-card.selected {
+  border-color: var(--class-color);
+  background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.class-card.selected::before {
+  opacity: 1;
+}
+
+.class-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.class-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.class-desc {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.selected-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--class-color);
+  color: white;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+.class-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 16px;
 }
 </style>

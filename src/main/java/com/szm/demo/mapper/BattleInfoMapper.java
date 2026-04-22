@@ -16,23 +16,25 @@ public interface BattleInfoMapper {
             "create_time, update_time) VALUES (#{battleInfo.saveId},#{battleInfo.monsterId}," +
             "#{battleInfo.playerCurrentHp},#{battleInfo.playerCurrentMp}," +
             "#{battleInfo.playerCurrentDefend},#{battleInfo.monsterCurrentHp}," +
-            "#{battleInfo.monsterCurrentMp},#{battleInfo.monsterCurrentDefend},#{battleInfo.createTime}" +
+            "#{battleInfo.monsterCurrentMp},#{battleInfo.monsterCurrentDefend},#{battleInfo.createTime}," +
             "#{battleInfo.updateTime})")
-    BattleInfo insert(@Param("battleInfo")BattleInfo battleInfo);
+    int insert(@Param("battleInfo")BattleInfo battleInfo);
 
-    @Update("UPDATE battle_info SET (monster_id, player_current_hp, player_current_mp, " +
-            "player_current_defend, monster_current_hp, monster_current_mp, " +
-            "monster_current_defend, update_time) VALUE (#{battleInfo.monsterId}," +
-            "#{battleInfo.playerCurrentHp},#{battleInfo.playerCurrentMp},#{battleInfo.playerCurrentDefend}" +
-            "#{battleInfo.monsterCurrentHp},#{battleInfo.monsterCurrentMp},#{battleInfo.monsterCurrentDefend}" +
-            "#{battleInfo.updateTime}) WHERE id = #{battleInfo.id}")
+    @Update("UPDATE battle_info SET monster_id=#{battleInfo.monsterId}, " +
+            "player_current_hp=#{battleInfo.playerCurrentHp}, " +
+            "player_current_mp=#{battleInfo.playerCurrentMp}, " +
+            "player_current_defend=#{battleInfo.playerCurrentDefend}, " +
+            "monster_current_hp=#{battleInfo.monsterCurrentHp}, " +
+            "monster_current_mp=#{battleInfo.monsterCurrentMp}, " +
+            "monster_current_defend=#{battleInfo.monsterCurrentDefend}, " +
+            "update_time=#{battleInfo.updateTime} WHERE id = #{battleInfo.id}")
     void updateById(@Param("battleInfo")BattleInfo battleInfo);
 
     @Update("UPDATE battle_info SET (monster_id, player_current_hp, player_current_mp, " +
             "player_current_defend, monster_current_hp, monster_current_mp, " +
             "monster_current_defend, update_time) VALUE (#{battleInfo.monsterId}," +
-            "#{battleInfo.playerCurrentHp},#{battleInfo.playerCurrentMp},#{battleInfo.playerCurrentDefend}" +
-            "#{battleInfo.monsterCurrentHp},#{battleInfo.monsterCurrentMp},#{battleInfo.monsterCurrentDefend}" +
+            "#{battleInfo.playerCurrentHp},#{battleInfo.playerCurrentMp},#{battleInfo.playerCurrentDefend}," +
+            "#{battleInfo.monsterCurrentHp},#{battleInfo.monsterCurrentMp},#{battleInfo.monsterCurrentDefend}," +
             "#{battleInfo.updateTime}) WHERE save_id = #{battleInfo.saveId}")
     void updateBySaveId(@Param("saveInfo") BattleInfo battleInfo);
 

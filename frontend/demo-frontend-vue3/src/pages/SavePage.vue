@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { saveService, type SaveInfo } from '../api/userService'
+import { gameContext } from '../api/gameContext'
 import { Plus, Download, Upload, Delete } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -22,17 +23,28 @@ const goHome = () => {
 const loadSaves = async () => {
   loading.value = true
   try {
-    const [allSavesRes, currentSaveRes] = await Promise.all([
-      saveService.getAllSaves(),
-      saveService.getCurrentSave().catch(() => null)
-    ])
+    // 先获取所有存档列表
+    const allSavesRes = await saveService.getAllSaves()
     
     if (allSavesRes.data.success) {
       saves.value = allSavesRes.data.data || []
     }
     
-    if (currentSaveRes?.data?.success) {
-      currentSave.value = currentSaveRes.data.data
+    // 如果有存档，再获取当前存档
+    if (saves.value.length > 0) {
+      const currentSaveRes = await saveService.getCurrentSave().catch(() => null)
+      if (currentSaveRes?.data?.success) {
+        currentSave.value = currentSaveRes.data.data
+        // 更新游戏上下文
+        if (currentSaveRes.data.data) {
+          gameContext.setSaveId(currentSaveRes.data.data.id)
+          gameContext.setPlayerId(currentSaveRes.data.data.playerId)
+        }
+      }
+    } else {
+      currentSave.value = null
+      gameContext.setSaveId(null as any)
+      gameContext.setPlayerId(null as any)
     }
   } catch (error: any) {
     ElMessage.error(error.response?.data?.message || '加载存档失败')
@@ -76,6 +88,9 @@ const loadSave = async (save: SaveInfo) => {
     if (response.data.success) {
       ElMessage.success('加载存档成功')
       currentSave.value = save
+      // 更新游戏上下文
+      gameContext.setSaveId(save.id)
+      gameContext.setPlayerId(save.playerId)
     } else {
       ElMessage.error(response.data.message || '加载存档失败')
     }

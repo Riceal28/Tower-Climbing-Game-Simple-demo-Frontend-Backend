@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { gameContext } from './gameContext'
 
 const API_BASE_URL = 'http://localhost:8080/api'
 
@@ -39,6 +40,19 @@ export interface PlayerInfo {
   maxMp: number
   currentHp?: number
   currentMp?: number
+}
+
+// 玩家展示响应接口
+export interface PlayerShowResp {
+  id: number
+  playerClass: string
+  level: number
+  exp: number
+  attackBase: number
+  maxHp: number
+  maxMp: number
+  currentHp: number
+  currentMp: number
 }
 
 // 存档信息接口
@@ -127,6 +141,11 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = token
   }
+  // 添加游戏上下文 header
+  const contextHeaders = gameContext.toHeaders()
+  Object.entries(contextHeaders).forEach(([key, value]) => {
+    config.headers[key as keyof typeof config.headers] = value
+  })
   return config
 })
 
@@ -166,8 +185,13 @@ export const userService = {
 // ==================== 玩家服务 ====================
 
 export const playerService = {
+  // 获取所有用户的所有角色
+  getPlayerAll(): Promise<ApiResponse<PlayerShowResp[]>> {
+    return api.get('/player/showall')
+  },
+
   // 获取玩家基础信息 (showbase)
-  getPlayerBaseInfo(): Promise<ApiResponse<PlayerInfo>> {
+  getPlayerBaseInfo(): Promise<ApiResponse<PlayerShowResp>> {
     return api.get('/player/showbase')
   },
 
@@ -197,7 +221,7 @@ export const saveService = {
 
   // 获取所有存档
   getAllSaves(): Promise<ApiResponse<SaveInfo[]>> {
-    return api.get('/save/showall')
+    return api.get('/save/showallp')
   },
 
   // 获取当前存档

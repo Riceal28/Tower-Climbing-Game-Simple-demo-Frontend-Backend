@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { battleService, type BattleResp } from '../api/userService'
+import { gameContext } from '../api/gameContext'
 
 const router = useRouter()
 
@@ -58,6 +59,10 @@ const startBattle = async () => {
       battleLogs.value = []
       if (response.data.data.log) {
         battleLogs.value.push(response.data.data.log)
+      }
+      // 设置 battleId 到游戏上下文
+      if (response.data.data.battleInfo?.id) {
+        gameContext.setBattleId(response.data.data.battleInfo.id)
       }
       ElMessage.success('战斗开始！')
     } else {
@@ -134,6 +139,9 @@ const checkBattleResult = () => {
   if (!battleData.value?.result) return
   
   const result = battleData.value.result
+  // 清空战斗上下文
+  gameContext.clear()
+  
   if (result === 'WIN') {
     ElMessageBox.alert('恭喜你获得了胜利！', '战斗结束', {
       confirmButtonText: '确定',

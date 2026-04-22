@@ -11,8 +11,6 @@ public interface BattleService {
 
     BattleInfo convertFromSave(SaveInfo saveInfo);
 
-    void updateBattle(BattleInfo battleInfo);
-
     void afterOneAction(BattleInfo battleInfo, ActionInfo actionInfo);
     /**
      * 开始新战斗：从存档创建战斗实例，绑定楼层怪物与双方技能
@@ -39,9 +37,5 @@ public interface BattleService {
      */
     String checkBattleEnd(BattleInfo battleInfo);
 
-    /**
-     * 内部：战斗结束结算
-     */
-    void settleBattle(BattleInfo battleInfo, String result);
 
 }

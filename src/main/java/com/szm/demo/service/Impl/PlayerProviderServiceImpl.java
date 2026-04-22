@@ -18,6 +18,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.CollectionUtils;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -53,6 +54,23 @@ public class PlayerProviderServiceImpl implements PlayerProviderService {
 
         logger.info("查询了一次用户角色详情");
         return userPlayerInfo;
+    }
+
+    @Override
+    public List<UserPlayerInfo> getPlayerInfoByUserId() {
+        Long userId = GameContext.getUserId();
+        if (userId == null) {
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
+        logger.info("userId[{}]",userId);
+        List<UserPlayerInfo> userPlayerInfos = userPlayerInfoMapper.getAllByUserId(userId);
+//        if (userPlayerInfos.isEmpty()) {
+//            logger.error("用户无角色");
+//            throw new BusinessException(ResultCode.NOT_FOUND, "角色不存在");
+//        }
+        logger.info("角色列表[{}]",userPlayerInfos);
+        logger.info("批量查询了一次用户角色详情");
+        return userPlayerInfos;
     }
 
     @Override
