@@ -11,7 +11,7 @@
  Target Server Version : 80015 (8.0.15)
  File Encoding         : 65001
 
- Date: 21/04/2026 19:03:37
+ Date: 22/04/2026 19:21:32
 */
 
 SET NAMES utf8mb4;
@@ -67,7 +67,7 @@ CREATE TABLE `battle_info`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '战斗信息表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 49 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '战斗信息表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of battle_info
@@ -88,13 +88,36 @@ CREATE TABLE `level_info`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `level`(`level` ASC) USING BTREE,
   INDEX `idx_level`(`level` ASC) USING BTREE COMMENT '等级索引'
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '等级信息表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '等级信息表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of level_info
 -- ----------------------------
+INSERT INTO `level_info` VALUES (1, 'SABER', 1, 20, 10, 4, 2, '2026-04-22 10:28:30', '2026-04-22 10:28:30');
+INSERT INTO `level_info` VALUES (3, 'ARCHER', 1, 20, 8, 5, 2, '2026-04-22 10:29:16', '2026-04-22 10:29:58');
+INSERT INTO `level_info` VALUES (4, 'CASTER', 1, 20, 6, 10, 1, '2026-04-22 10:30:31', '2026-04-22 10:30:31');
+INSERT INTO `level_info` VALUES (5, 'SABER', 2, 25, 12, 4, 3, '2026-04-22 10:30:48', '2026-04-22 10:30:48');
+INSERT INTO `level_info` VALUES (6, 'ARCHER', 2, 25, 9, 6, 2, '2026-04-22 10:31:04', '2026-04-22 10:31:04');
+INSERT INTO `level_info` VALUES (7, 'CASTER', 2, 25, 7, 12, 2, '2026-04-22 10:31:27', '2026-04-22 10:31:27');
+
+-- ----------------------------
+-- Table structure for monster_action_group
+-- ----------------------------
+DROP TABLE IF EXISTS `monster_action_group`;
+CREATE TABLE `monster_action_group`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `monster_id` bigint(20) UNSIGNED NOT NULL COMMENT '魔物ID',
+  `action_id` bigint(20) UNSIGNED NOT NULL COMMENT '技能ID',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '魔物技能关联表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of monster_action_group
+-- ----------------------------
+INSERT INTO `monster_action_group` VALUES (1, 1, 6, '2026-04-22 14:38:51', '2026-04-22 14:38:51');
 
 -- ----------------------------
 -- Table structure for monster_action_info
@@ -110,11 +133,12 @@ CREATE TABLE `monster_action_info`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '魔物行为关联表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 27 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '魔物行为关联表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of monster_action_info
 -- ----------------------------
+INSERT INTO `monster_action_info` VALUES (17, 39, 1, 6, 0, 0, '2026-04-22 16:00:50', '2026-04-22 16:00:50');
 
 -- ----------------------------
 -- Table structure for monster_info
@@ -141,6 +165,28 @@ CREATE TABLE `monster_info`  (
 INSERT INTO `monster_info` VALUES (1, 1, '史莱姆', '最弱小的魔物', 3, 0, 1, 5, '2026-04-07 10:46:47', '2026-04-07 10:46:47');
 
 -- ----------------------------
+-- Table structure for player_action_group
+-- ----------------------------
+DROP TABLE IF EXISTS `player_action_group`;
+CREATE TABLE `player_action_group`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `level_id` bigint(20) UNSIGNED NOT NULL COMMENT '等级ID',
+  `action_id` bigint(20) UNSIGNED NOT NULL COMMENT '技能ID',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色技能关联表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of player_action_group
+-- ----------------------------
+INSERT INTO `player_action_group` VALUES (1, 1, 1, '2026-04-22 14:39:13', '2026-04-22 14:39:13');
+INSERT INTO `player_action_group` VALUES (2, 3, 1, '2026-04-22 14:39:51', '2026-04-22 14:39:51');
+INSERT INTO `player_action_group` VALUES (3, 4, 1, '2026-04-22 14:39:53', '2026-04-22 14:39:53');
+INSERT INTO `player_action_group` VALUES (4, 5, 1, '2026-04-22 15:53:40', '2026-04-22 15:53:40');
+INSERT INTO `player_action_group` VALUES (5, 5, 2, '2026-04-22 15:53:44', '2026-04-22 15:53:44');
+
+-- ----------------------------
 -- Table structure for player_action_info
 -- ----------------------------
 DROP TABLE IF EXISTS `player_action_info`;
@@ -154,11 +200,16 @@ CREATE TABLE `player_action_info`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色技能关联表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 110 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '角色技能关联表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of player_action_info
 -- ----------------------------
+INSERT INTO `player_action_info` VALUES (101, 0, 22, 1, 0, 0, '2026-04-22 18:59:24', '2026-04-22 18:59:24');
+INSERT INTO `player_action_info` VALUES (102, 0, 22, 2, 0, 0, '2026-04-22 18:59:24', '2026-04-22 18:59:24');
+INSERT INTO `player_action_info` VALUES (103, 0, 22, 3, 0, 0, '2026-04-22 18:59:24', '2026-04-22 18:59:24');
+INSERT INTO `player_action_info` VALUES (104, 0, 22, 4, 0, 0, '2026-04-22 18:59:24', '2026-04-22 18:59:24');
+INSERT INTO `player_action_info` VALUES (105, 0, 22, 5, 0, 0, '2026-04-22 18:59:24', '2026-04-22 18:59:24');
 
 -- ----------------------------
 -- Table structure for save_info
@@ -179,11 +230,12 @@ CREATE TABLE `save_info`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE COMMENT '用户ID索引'
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '游戏存档表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 23 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '游戏存档表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of save_info
 -- ----------------------------
+INSERT INTO `save_info` VALUES (22, 1, 22, 2, 0, 10, 4, 2, 1, 0, '2026-04-22 19:17:54', '2026-04-22 19:19:58');
 
 -- ----------------------------
 -- Table structure for tower_floor_info
@@ -219,7 +271,7 @@ CREATE TABLE `tower_floor_monster_info`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_floor_monster_order`(`floor` ASC, `monster_id` ASC, `battle_order` ASC) USING BTREE COMMENT '楼层+怪物+顺序唯一索引，防止重复配置'
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '魔塔-楼层魔物配置表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '魔塔-楼层魔物配置表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of tower_floor_monster_info
@@ -227,27 +279,15 @@ CREATE TABLE `tower_floor_monster_info`  (
 INSERT INTO `tower_floor_monster_info` VALUES (1, 1, 1, 1, 3, '2026-04-07 10:47:06', '2026-04-07 10:47:21');
 INSERT INTO `tower_floor_monster_info` VALUES (2, 1, 2, 1, 3, '2026-04-07 10:47:29', '2026-04-07 10:47:29');
 INSERT INTO `tower_floor_monster_info` VALUES (3, 1, 3, 1, 4, '2026-04-07 10:47:37', '2026-04-07 10:47:37');
-
--- ----------------------------
--- Table structure for user_action_info
--- ----------------------------
-DROP TABLE IF EXISTS `user_action_info`;
-CREATE TABLE `user_action_info`  (
-  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `battle_id` bigint(20) UNSIGNED NOT NULL COMMENT '对应的战斗ID',
-  `user_id` bigint(20) UNSIGNED NOT NULL COMMENT '用户ID',
-  `action_id` bigint(20) UNSIGNED NOT NULL COMMENT '行为ID',
-  `current_cd` int(11) NOT NULL DEFAULT 0 COMMENT '该行为当前冷却时间',
-  `rest_continue_round` int(11) NOT NULL DEFAULT 0 COMMENT '剩余持续回合数',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `idx_user_id`(`user_id` ASC) USING BTREE COMMENT '按创建时间查询索引'
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户行为关联表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Records of user_action_info
--- ----------------------------
+INSERT INTO `tower_floor_monster_info` VALUES (4, 1, 0, 1, 3, '2026-04-22 11:34:17', '2026-04-22 11:34:17');
+INSERT INTO `tower_floor_monster_info` VALUES (5, 1, 4, 1, 3, '2026-04-22 15:54:45', '2026-04-22 15:54:45');
+INSERT INTO `tower_floor_monster_info` VALUES (6, 1, 5, 1, 3, '2026-04-22 15:54:55', '2026-04-22 15:54:55');
+INSERT INTO `tower_floor_monster_info` VALUES (7, 1, 6, 1, 3, '2026-04-22 15:55:00', '2026-04-22 15:55:00');
+INSERT INTO `tower_floor_monster_info` VALUES (8, 2, 1, 1, 3, '2026-04-22 16:00:22', '2026-04-22 16:00:22');
+INSERT INTO `tower_floor_monster_info` VALUES (9, 2, 2, 1, 3, '2026-04-22 16:00:28', '2026-04-22 16:00:28');
+INSERT INTO `tower_floor_monster_info` VALUES (10, 2, 3, 1, 3, '2026-04-22 16:00:36', '2026-04-22 16:00:36');
+INSERT INTO `tower_floor_monster_info` VALUES (11, 2, 4, 1, 3, '2026-04-22 16:00:40', '2026-04-22 16:00:40');
+INSERT INTO `tower_floor_monster_info` VALUES (12, 2, 5, 1, 3, '2026-04-22 16:00:46', '2026-04-22 16:00:46');
 
 -- ----------------------------
 -- Table structure for user_info
@@ -272,10 +312,10 @@ CREATE TABLE `user_info`  (
 INSERT INTO `user_info` VALUES (1, '123@123456.com', 'xiaowang', '123456', '2026-04-21 19:01:39', '2026-04-21 19:01:39');
 
 -- ----------------------------
--- Table structure for user_palyer_info
+-- Table structure for user_player_info
 -- ----------------------------
-DROP TABLE IF EXISTS `user_palyer_info`;
-CREATE TABLE `user_palyer_info`  (
+DROP TABLE IF EXISTS `user_player_info`;
+CREATE TABLE `user_player_info`  (
   `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID(角色ID)',
   `user_id` bigint(20) UNSIGNED NOT NULL COMMENT '关联用户ID',
   `player_class` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'SABER' COMMENT '职阶:SABER/ARCHER/CASTER',
@@ -288,10 +328,11 @@ CREATE TABLE `user_palyer_info`  (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE COMMENT '用户ID索引'
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户详情表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 23 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户详情表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Records of user_palyer_info
+-- Records of user_player_info
 -- ----------------------------
+INSERT INTO `user_player_info` VALUES (22, 1, 'SABER', 2, 0, 2, 10, 4, '2026-04-22 18:59:24', '2026-04-22 19:20:06');
 
 SET FOREIGN_KEY_CHECKS = 1;
