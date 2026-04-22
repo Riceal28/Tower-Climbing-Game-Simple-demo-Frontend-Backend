@@ -44,7 +44,6 @@ const loadSaves = async () => {
     } else {
       currentSave.value = null
       gameContext.setSaveId(null as any)
-      gameContext.setPlayerId(null as any)
     }
   } catch (error: any) {
     ElMessage.error(error.response?.data?.message || '加载存档失败')
@@ -55,6 +54,14 @@ const loadSaves = async () => {
 
 // 创建新存档
 const createSave = async () => {
+  // 确保 playerId 在上下文中
+  const playerId = gameContext.getPlayerId()
+  if (!playerId) {
+    ElMessage.warning('请先选择角色')
+    router.push('/player')
+    return
+  }
+  
   createLoading.value = true
   try {
     const response = await saveService.createDefaultSave()

@@ -126,7 +126,7 @@ public class BattleProviderServiceImpl implements BattleProviderService {
         // 更新存档
         saveInfo.setCurrentHp(battleInfo.getPlayerCurrentHp());
         saveInfo.setCurrentMp(battleInfo.getPlayerCurrentMp());
-        saveInfo.setBattleOrder(saveInfo.getBattleOrder() + 1);
+        saveInfo.setBattleOrder(saveInfo.getBattleOrder());
         saveInfo.setProgress(saveInfo.getProgress() + rewardProgress);
         saveInfo.setUpdateTime(LocalDateTime.now());
 

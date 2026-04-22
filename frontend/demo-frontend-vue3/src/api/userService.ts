@@ -144,7 +144,7 @@ api.interceptors.request.use((config) => {
   // 添加游戏上下文 header
   const contextHeaders = gameContext.toHeaders()
   Object.entries(contextHeaders).forEach(([key, value]) => {
-    config.headers[key as keyof typeof config.headers] = value
+    config.headers.set(key, value)
   })
   return config
 })
