@@ -55,4 +55,10 @@ public class PlayerController {
         playerService.resetPlayer(userId);
         return Result.success("角色重置成功");
     }
+
+    @DeleteMapping("/delete")
+    public Result<String> playerDelete(@RequestBody Long playerId){
+        playerService.deletePlayer(playerId);
+        return Result.success("删除成功");
+    }
 }

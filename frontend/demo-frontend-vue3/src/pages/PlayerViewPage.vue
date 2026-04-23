@@ -23,21 +23,21 @@ const playerClasses = [
     value: PlayerClass.SABER,
     name: '剑士',
     icon: '⚔️',
-    desc: '平衡型战士，攻防兼备',
+    desc: '近战输出专精，HP和攻击力成长较高',
     color: '#e74c3c'
   },
   {
     value: PlayerClass.ARCHER,
-    name: '弓兵',
+    name: '游侠',
     icon: '🏹',
-    desc: '敏捷型输出，高暴击率',
+    desc: '均衡型角色，成长均衡但无专精技能',
     color: '#27ae60'
   },
   {
     value: PlayerClass.CASTER,
     name: '魔法师',
     icon: '🔮',
-    desc: '智力型输出，高魔法伤害',
+    desc: '法力输出专精，MP成长较高但攻击力和HP成长低',
     color: '#9b59b6'
   }
 ]
@@ -51,6 +51,9 @@ const selectedPlayerId = ref<number | null>(null)
 const creating = ref(false)
 const showClassDialog = ref(false)
 const selectedClass = ref<typeof playerClasses[0] | null>(null)
+const showDeleteConfirm = ref(false)
+const deleteTargetPlayer = ref<PlayerShowResp | null>(null)
+const deleting = ref(false)
 
 const goHome = () => {
   router.push('/home')
@@ -142,6 +145,36 @@ const handleCreatePlayer = async () => {
   }
 }
 
+// 打开删除确认对话框
+const openDeleteConfirm = (player: PlayerShowResp, e: Event) => {
+  e.stopPropagation()
+  deleteTargetPlayer.value = player
+  showDeleteConfirm.value = true
+}
+
+// 确认删除角色
+const confirmDeletePlayer = async () => {
+  if (!deleteTargetPlayer.value) return
+  
+  deleting.value = true
+  try {
+    const response = await playerService.deletePlayer(deleteTargetPlayer.value.id)
+    if (response.data.success) {
+      ElMessage.success(`${getClassName(deleteTargetPlayer.value.playerClass)}已删除`)
+      showDeleteConfirm.value = false
+      deleteTargetPlayer.value = null
+      // 重新加载角色列表
+      await loadPlayerList()
+    } else {
+      ElMessage.error(response.data.message || '删除角色失败')
+    }
+  } catch (error: any) {
+    ElMessage.error(error.response?.data?.message || '删除角色失败，请重试')
+  } finally {
+    deleting.value = false
+  }
+}
+
 onMounted(() => {
   loadPlayerList()
 })
@@ -190,6 +223,16 @@ const getClassColor = (playerClass: string) => {
 
     <!-- 角色列表视图 -->
     <div v-else-if="viewState === 'list'" class="player-list-container">
+      <!-- 创建新角色按钮 -->
+      <el-button
+        type="primary"
+        @click="openClassDialog"
+        :loading="creating"
+        class="create-new-button"
+      >
+        ✨ 创建新角色
+      </el-button>
+
       <!-- 有角色的情况 -->
       <div v-if="playerList.length > 0" class="player-cards-grid">
         <div
@@ -206,6 +249,16 @@ const getClassColor = (playerClass: string) => {
           <div class="card-hp">❤️ {{ player.currentHp }}/{{ player.maxHp }}</div>
           <div class="card-mp">💙 {{ player.currentMp }}/{{ player.maxMp }}</div>
           <div class="card-arrow">→</div>
+          <el-button
+            type="danger"
+            size="small"
+            circle
+            plain
+            class="delete-button"
+            @click="openDeleteConfirm(player, $event)"
+          >
+            🗑
+          </el-button>
         </div>
       </div>
 
@@ -308,6 +361,26 @@ const getClassColor = (playerClass: string) => {
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 删除确认对话框 -->
+    <el-dialog
+      v-model="showDeleteConfirm"
+      title="删除角色"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <div v-if="deleteTargetPlayer" class="delete-confirm-content">
+        <div class="warning-icon">⚠️</div>
+        <p>确定要删除 <strong>{{ getClassName(deleteTargetPlayer.playerClass) }} Lv.{{ deleteTargetPlayer.level }}</strong> 吗？</p>
+        <p class="warning-text">此操作不可撤销，所有相关数据将被永久删除。</p>
+      </div>
+      <template #footer>
+        <el-button @click="showDeleteConfirm = false">取消</el-button>
+        <el-button type="danger" @click="confirmDeletePlayer" :loading="deleting">
+          确认删除
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -389,6 +462,15 @@ const getClassColor = (playerClass: string) => {
   overflow: hidden;
 }
 
+.delete-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
 .player-card-item::before {
   content: '';
   position: absolute;
@@ -408,6 +490,10 @@ const getClassColor = (playerClass: string) => {
 }
 
 .player-card-item:hover::before {
+  opacity: 1;
+}
+
+.player-card-item:hover .delete-button {
   opacity: 1;
 }
 
@@ -588,6 +674,22 @@ const getClassColor = (playerClass: string) => {
   box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
 }
 
+/* 创建新角色按钮样式 */
+.create-new-button {
+  margin-bottom: 20px;
+  width: 200px;
+  height: 50px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.create-new-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+}
+
 /* 职阶选择 */
 .class-selection {
   display: flex;
@@ -669,6 +771,45 @@ const getClassColor = (playerClass: string) => {
   padding: 2px 8px;
   border-radius: 10px;
   font-weight: bold;
+}
+
+/* 删除确认对话框 */
+.delete-confirm-content {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.warning-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-8px);
+  }
+  75% {
+    transform: translateX(8px);
+  }
+}
+
+.delete-confirm-content p {
+  margin: 12px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.delete-confirm-content p strong {
+  color: #e74c3c;
+}
+
+.warning-text {
+  color: #999;
+  font-size: 12px !important;
 }
 
 .class-badge {

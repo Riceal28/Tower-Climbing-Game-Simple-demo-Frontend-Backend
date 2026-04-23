@@ -30,4 +30,7 @@ public interface SaveInfoMapper {
             "battle_order=#{saveInfo.battleOrder},progress=#{saveInfo.progress} " +
             "WHERE id=#{saveInfo.id}")
     int updateSaveById(@Param("saveInfo")SaveInfo saveInfo);
+
+    @Delete("DELETE FROM save_info WHERE player_id=#{playerId}")
+    int deleteByPlayerId(@Param("playerId")Long playerId);
 }

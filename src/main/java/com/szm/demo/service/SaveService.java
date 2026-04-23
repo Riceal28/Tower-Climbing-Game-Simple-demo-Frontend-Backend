@@ -10,6 +10,7 @@ public interface SaveService {
     void createDefaultSave();
     List<SaveInfo> getSaveByUserId();
     List<SaveInfo> getSaveByPlayerId();
+    List<SaveInfo> getSaveByPlayerId(Long playerId);
     SaveInfo getSaveById();
 
     /**

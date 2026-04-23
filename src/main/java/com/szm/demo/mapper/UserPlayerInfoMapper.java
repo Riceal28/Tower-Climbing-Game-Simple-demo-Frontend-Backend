@@ -45,4 +45,7 @@ public interface UserPlayerInfoMapper {
      */
     @Update("UPDATE user_player_info SET exp=#{exp} WHERE id=#{id}")
     int updateExpById(@Param("id") Long id, @Param("exp") Long exp);
+
+    @Delete("DELETE FROM user_player_info WHERE id=#{playerId}")
+    int deleteByPlayerId(@Param("playerId")Long playerId);
 }

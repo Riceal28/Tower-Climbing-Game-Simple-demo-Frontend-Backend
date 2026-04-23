@@ -164,6 +164,16 @@ public class SaveServiceImpl implements SaveService {
         logger.info("当前角色ID[{}]角色存档列表[{}]",playerId,saveInfoList);
         return saveInfoList;
     }
+    //todo:try包围
+    @Override
+    public List<SaveInfo> getSaveByPlayerId(Long playerId) {
+        if (playerId == null) {
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
+        List<SaveInfo> saveInfoList = saveInfoMapper.getByPlayerId(playerId);
+        logger.info("当前角色ID[{}]角色存档列表[{}]",playerId,saveInfoList);
+        return saveInfoList;
+    }
 
     /**
      * 根据用户ID,存档ID获取指定存档

@@ -4,11 +4,14 @@ import com.szm.demo.common.BusinessException;
 import com.szm.demo.common.RedisKeyConstants;
 import com.szm.demo.common.ResultCode;
 import com.szm.demo.context.GameContext;
+import com.szm.demo.dto.ActionDetailResp;
 import com.szm.demo.entity.ActionInfo;
 import com.szm.demo.entity.MonsterActionInfo;
+import com.szm.demo.entity.PlayerActionGroup;
 import com.szm.demo.entity.PlayerActionInfo;
 import com.szm.demo.mapper.ActionInfoMapper;
 import com.szm.demo.mapper.MonsterActionInfoMapper;
+import com.szm.demo.mapper.PlayerActionGroupMapper;
 import com.szm.demo.mapper.PlayerActionInfoMapper;
 import com.szm.demo.service.ActionService;
 import com.szm.demo.util.MapUtil;
@@ -39,26 +42,29 @@ public class ActionServiceImpl implements ActionService {
     private RedisUtil redisUtil;
     @Autowired
     private MonsterActionInfoMapper monsterActionInfoMapper;
+    @Autowired
+    private PlayerActionGroupMapper playerActionGroupMapper;
 
     @Override
     @Transactional
-    public void addDefaultAction(Long playerId) {
+    public void addDefaultAction(Long playerId, Integer levelId) {
 //        Long playerId = GameContext.getPlayerId();
 //        Long battleId = GameContext.getBattleId();
         if (playerId == null) {
             throw new BusinessException(ResultCode.PRECONDITION_FAILED);
         }
         List<PlayerActionInfo> playerActionInfoList = new ArrayList<>();
-        for (long i = 1L; i <= 5; i++) {
-            PlayerActionInfo playerActionInfo = new PlayerActionInfo();
-            playerActionInfo.setBattleId(0L);
-            playerActionInfo.setPlayerId(playerId);
-            playerActionInfo.setActionId(i);
-            playerActionInfo.setCurrentCd(0);
-            playerActionInfo.setRestContinueRound(0);
-            playerActionInfo.setCreateTime(LocalDateTime.now());
-            playerActionInfo.setUpdateTime(LocalDateTime.now());
-            playerActionInfoList.add(playerActionInfo);
+        List<PlayerActionGroup> ag = playerActionGroupMapper.getByLId(levelId);
+        for (PlayerActionGroup a : ag) {
+            PlayerActionInfo p = new PlayerActionInfo();
+            p.setBattleId(0L);
+            p.setPlayerId(playerId);
+            p.setActionId(a.getActionId());
+            p.setCurrentCd(0);
+            p.setRestContinueRound(0);
+            p.setCreateTime(LocalDateTime.now());
+            p.setUpdateTime(LocalDateTime.now());
+            playerActionInfoList.add(p);
         }
         try {
             playerActionInfoMapper.batchInsert(playerActionInfoList);
@@ -131,6 +137,77 @@ public class ActionServiceImpl implements ActionService {
             logger.error("查询角色技能ID[{}]失败", id, e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR);
         }
+    }
+
+    @Override
+    public List<PlayerActionInfo> getPaByBId(Long battleId) {
+        if (battleId == null) {
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
+        try {
+            String key = RedisKeyConstants.PLAYER_ACTION.getKey(battleId);
+            Map<String, Map> map = redisUtil.hashEntries(key, Map.class);
+            if (!map.isEmpty()) {
+                List<PlayerActionInfo> list = new ArrayList<>();
+                map.forEach((id, m) -> {
+                    if(!m.isEmpty()){
+                        PlayerActionInfo pa = MapUtil.mapToPa(m);
+                        logger.info("缓存:根据战斗ID获取角色技能组[{}]",pa);
+                        list.add(pa);
+                    }
+                });
+            }
+            List<PlayerActionInfo> list = playerActionInfoMapper.getByBattleId(battleId);
+            logger.info("DB:根据战斗ID获取角色技能组[{}]",list);
+            if (list.isEmpty()) {
+                throw new BusinessException(ResultCode.NOT_FOUND);
+            }
+            Map<String, Object> batch = new HashMap<>();
+            for (PlayerActionInfo p : list) {
+                batch.put(battleId.toString(), MapUtil.paToMap(p));
+            }
+            redisUtil.hashPutAll(key, batch);
+            return list;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error("查询战斗技能列表失败,战斗ID[{}]", battleId, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR);
+        }
+    }
+
+    @Override
+    public List<ActionDetailResp> getAllActionResp(){
+        Long battleId = GameContext.getBattleId();
+        if(battleId ==null){
+            throw new BusinessException(ResultCode.PRECONDITION_FAILED);
+        }
+        List<PlayerActionInfo> paList = getPaByBId(battleId);
+        List<ActionInfo> actionInfoList = new ArrayList<>();
+        List<ActionDetailResp> acs = new ArrayList<>();
+        for(PlayerActionInfo pa : paList){
+            ActionInfo actionInfo = getActionByAId(pa.getActionId());
+            if(actionInfo!=null){
+                actionInfoList.add(actionInfo);
+                ActionDetailResp ac = new ActionDetailResp();
+                ac.setActionId(pa.getActionId());
+                ac.setActionType(actionInfo.getActionType());
+                ac.setActionName(actionInfo.getActionName());
+                ac.setDescription(actionInfo.getDescription());
+                ac.setForHp(actionInfo.getForHp());
+                ac.setForMp(actionInfo.getForMp());
+                ac.setForDefend(actionInfo.getForDefend());
+                ac.setMpCost(actionInfo.getMpCost());
+                ac.setTargetPlayer(actionInfo.getIsTargetPlayer());
+                ac.setCurrentCd(pa.getCurrentCd());
+                ac.setRestContinueRound(pa.getRestContinueRound());
+                acs.add(ac);
+            }
+        }
+        if(acs.isEmpty()){
+            return Collections.emptyList();
+        }
+        return acs;
     }
 
 

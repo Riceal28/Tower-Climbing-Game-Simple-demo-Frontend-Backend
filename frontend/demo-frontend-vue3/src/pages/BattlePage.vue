@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { battleService, type BattleResp } from '../api/userService'
+import { battleService, type BattleResp, type ActionListItem } from '../api/userService'
 import { gameContext } from '../api/gameContext'
 
 const router = useRouter()
@@ -12,6 +12,7 @@ const loading = ref(false)
 const battleData = ref<BattleResp | null>(null)
 const battleLogs = ref<string[]>([])
 const actionLoading = ref(false)
+const actions = ref<ActionListItem[]>([])
 
 // 计算属性：玩家HP百分比
 const playerHpPercent = computed(() => {
@@ -64,6 +65,8 @@ const startBattle = async () => {
       if (response.data.data.battleInfo?.id) {
         gameContext.setBattleId(response.data.data.battleInfo.id)
       }
+      // 获取技能列表
+      await loadActionList()
       ElMessage.success('战斗开始！')
     } else {
       ElMessage.error(response.data.message || '开始战斗失败')
@@ -75,18 +78,40 @@ const startBattle = async () => {
   }
 }
 
-// 获取战斗状态
-const getBattleStatus = async () => {
+// 获取技能图标
+const getActionIcon = (actionType: string) => {
+  switch (actionType) {
+    case 'ATTACK': return '⚔️'
+    case 'DEFENSE': return '🛡️'
+    case 'HEAL': return '💚'
+    case 'BUFF': return '✨'
+    default: return '❓'
+  }
+}
+
+// 获取技能主要效果描述
+const getActionMainEffect = (action: ActionListItem) => {
+  if (action.forHp > 0) return `恢复 ${action.forHp} HP`
+  if (action.forHp < 0) return `造成 ${Math.abs(action.forHp)} 伤害`
+  if (action.forDefend > 0) return `获得 ${action.forDefend} 格挡`
+  if (action.forMp > 0) return `恢复 ${action.forMp} MP`
+  if (action.forMp < 0) return `消耗 ${Math.abs(action.forMp)} MP`
+  return '无效果'
+}
+
+// 获取技能列表
+const loadActionList = async () => {
   try {
-    const response = await battleService.getBattleStatus()
+    const response = await battleService.getActionList()
     if (response.data.success) {
-      battleData.value = response.data.data
-      if (response.data.data.log) {
-        battleLogs.value.push(response.data.data.log)
-      }
+      actions.value = response.data.data
+    } else {
+      ElMessage.error(response.data.message || '获取技能列表失败')
+      actions.value = []
     }
   } catch (error: any) {
-    console.error('获取战斗状态失败:', error)
+    ElMessage.error(error.response?.data?.message || '获取技能列表失败')
+    actions.value = []
   }
 }
 
@@ -146,22 +171,18 @@ const checkBattleResult = () => {
     ElMessageBox.alert('恭喜你获得了胜利！', '战斗结束', {
       confirmButtonText: '确定',
       type: 'success',
+    }).then(() => {
+      // 重新开始战斗时会自动加载技能列表
     })
   } else if (result === 'LOSE') {
     ElMessageBox.alert('战斗失败，请再接再厉！', '战斗结束', {
       confirmButtonText: '确定',
       type: 'error',
+    }).then(() => {
+      // 重新开始战斗时会自动加载技能列表
     })
   }
 }
-
-// 模拟动作列表（实际应从后端获取）
-const actions = ref([
-  { id: 1, name: '普通攻击', icon: '⚔️', mpCost: 0 },
-  { id: 2, name: '强力一击', icon: '💥', mpCost: 10 },
-  { id: 3, name: '治疗术', icon: '💚', mpCost: 15 },
-  { id: 4, name: '防御姿态', icon: '🛡️', mpCost: 5 },
-])
 
 onMounted(() => {
   startBattle()
@@ -217,7 +238,7 @@ onMounted(() => {
 
         <!-- 魔物方 -->
         <div class="combatant monster-side">
-          <div class="avatar">👹</div>
+          <div class="avatar">👻</div>
           <div class="name">{{ battleData.monsterInfo.monsterName }}</div>
           <div class="hp-bar">
             <el-progress 
@@ -264,19 +285,27 @@ onMounted(() => {
       <!-- 动作按钮 -->
       <div class="action-panel">
         <div class="actions-grid">
-          <el-button
+          <el-tooltip
             v-for="action in actions"
-            :key="action.id"
-            class="action-btn"
-            :type="action.mpCost > (battleData?.battleInfo?.playerCurrentMp || 0) ? 'info' : 'primary'"
-            :disabled="action.mpCost > (battleData?.battleInfo?.playerCurrentMp || 0) || actionLoading || battleData?.result !== null"
-            @click="executeAction(action.id)"
-            :loading="actionLoading"
+            :key="action.actionId"
+            :content="action.description"
+            placement="top"
+            effect="dark"
           >
-            <span class="action-icon">{{ action.icon }}</span>
-            <span class="action-name">{{ action.name }}</span>
-            <span class="action-cost" v-if="action.mpCost > 0">{{ action.mpCost }} MP</span>
-          </el-button>
+            <el-button
+              class="action-btn"
+              :type="action.mpCost > (battleData?.battleInfo?.playerCurrentMp || 0) || action.currentCd > 0 ? 'info' : 'primary'"
+              :disabled="action.mpCost > (battleData?.battleInfo?.playerCurrentMp || 0) || action.currentCd > 0 || actionLoading || battleData?.result !== null"
+              @click="executeAction(action.actionId)"
+              :loading="actionLoading"
+            >
+              <span class="action-icon">{{ getActionIcon(action.actionType) }}</span>
+              <span class="action-name">{{ action.actionName }}</span>
+              <span class="action-effect">{{ getActionMainEffect(action) }}</span>
+              <span class="action-cost" v-if="action.mpCost > 0">{{ action.mpCost }} MP</span>
+              <span class="action-cd" v-if="action.currentCd > 0">CD: {{ action.currentCd }}</span>
+            </el-button>
+          </el-tooltip>
         </div>
         <el-button
           class="end-round-btn"
@@ -510,26 +539,42 @@ onMounted(() => {
 }
 
 .action-btn {
-  height: 80px;
+  height: 100px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  font-size: 14px;
+  gap: 3px;
+  font-size: 12px;
+  padding: 8px;
 }
 
 .action-icon {
-  font-size: 28px;
+  font-size: 24px;
 }
 
 .action-name {
   font-weight: 500;
+  font-size: 13px;
+}
+
+.action-effect {
+  font-size: 11px;
+  color: #888;
+  text-align: center;
+  line-height: 1.2;
 }
 
 .action-cost {
-  font-size: 12px;
-  color: #888;
+  font-size: 10px;
+  color: #409eff;
+  font-weight: bold;
+}
+
+.action-cd {
+  font-size: 10px;
+  color: #f56c6c;
+  font-weight: bold;
 }
 
 .end-round-btn {

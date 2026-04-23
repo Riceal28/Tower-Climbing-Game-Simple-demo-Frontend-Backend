@@ -125,6 +125,21 @@ export interface ActionInfo {
   cd: number
 }
 
+// 战斗技能列表接口
+export interface ActionListItem {
+  actionId: number
+  actionType: string
+  actionName: string
+  description: string
+  forHp: number
+  forMp: number
+  forDefend: number
+  mpCost: number
+  currentCd: number
+  restContinueRound: number
+  targetPlayer: boolean
+}
+
 // ==================== Axios 配置 ====================
 
 const api = axios.create({
@@ -209,6 +224,13 @@ export const playerService = {
   resetPlayer(): Promise<ApiResponse<string>> {
     return api.post('/player/reset')
   },
+
+  // 删除角色
+  deletePlayer(playerId: number): Promise<ApiResponse<null>> {
+    return api.delete('/player/delete', {
+      data: playerId
+    })
+  },
 }
 
 // ==================== 存档服务 ====================
@@ -251,6 +273,11 @@ export const battleService = {
   // 获取战斗状态
   getBattleStatus(): Promise<ApiResponse<BattleResp>> {
     return api.get('/battle/status')
+  },
+
+  // 获取技能列表
+  getActionList(): Promise<ApiResponse<ActionListItem[]>> {
+    return api.get('/battle/actionList')
   },
 
   // 执行动作

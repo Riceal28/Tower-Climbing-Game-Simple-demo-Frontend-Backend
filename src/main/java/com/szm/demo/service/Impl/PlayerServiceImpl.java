@@ -12,11 +12,11 @@ import com.szm.demo.entity.ActionInfo;
 import com.szm.demo.entity.LevelInfo;
 import com.szm.demo.entity.SaveInfo;
 import com.szm.demo.entity.UserPlayerInfo;
+import com.szm.demo.mapper.BattleInfoMapper;
+import com.szm.demo.mapper.PlayerActionInfoMapper;
+import com.szm.demo.mapper.SaveInfoMapper;
 import com.szm.demo.mapper.UserPlayerInfoMapper;
-import com.szm.demo.service.ActionService;
-import com.szm.demo.service.LevelService;
-import com.szm.demo.service.PlayerProviderService;
-import com.szm.demo.service.PlayerService;
+import com.szm.demo.service.*;
 import com.szm.demo.util.MapUtil;
 import com.szm.demo.util.RedisUtil;
 import org.slf4j.Logger;
@@ -51,6 +51,14 @@ public class PlayerServiceImpl implements PlayerService {
 
     @Autowired
     ActionService actionService;
+    @Autowired
+    SaveService saveService;
+    @Autowired
+    private SaveInfoMapper saveInfoMapper;
+    @Autowired
+    private BattleInfoMapper battleInfoMapper;
+    @Autowired
+    private PlayerActionInfoMapper playerActionInfoMapper;
 
     @Override
     @Transactional//抛出异常自动回滚
@@ -74,7 +82,7 @@ public class PlayerServiceImpl implements PlayerService {
             userPlayerInfoMapper.insert(userPlayerInfo);
             Long playerId = userPlayerInfo.getId();
 
-            actionService.addDefaultAction(playerId);
+//            actionService.addDefaultAction(playerId,levelInfo.getId());
 
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
@@ -159,10 +167,10 @@ public class PlayerServiceImpl implements PlayerService {
         }
         List<PlayerShowResp> respList = new ArrayList<>();
         List<UserPlayerInfo> list = playerProviderService.getPlayerInfoByUserId();
-        if(list.isEmpty()){
+        if (list.isEmpty()) {
             return Collections.emptyList();
         }
-        for(UserPlayerInfo u : list){
+        for (UserPlayerInfo u : list) {
             LevelInfo levelInfo = levelService.getLevelInfo(u.getPlayerClass(), u.getLevel());
             PlayerShowResp resp = new PlayerShowResp();
             resp.setId(u.getId());
@@ -236,6 +244,44 @@ public class PlayerServiceImpl implements PlayerService {
             logger.info("角色ID[{}]:尝试进行升级:当前多余经验:{}", playerId, extraExp);
         }
         logger.info("角色ID[{}]:尝试进行升级:结束，总耗时={}ms", playerId, System.currentTimeMillis() - startTime);
+    }
+
+    @Override
+    @Transactional
+    public void deletePlayer(Long playerId) {
+        if (playerId == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST);
+        }
+        Long userId = GameContext.getUserId();
+        List<SaveInfo> saveInfoList = saveService.getSaveByPlayerId(playerId);
+        if (!saveInfoList.isEmpty()) {
+            for (SaveInfo s : saveInfoList) {
+                battleInfoMapper.deleteBySaveId(s.getId());
+            }
+        }
+        saveInfoMapper.deleteByPlayerId(playerId);
+        playerActionInfoMapper.deleteByPlayerId(playerId);
+        userPlayerInfoMapper.deleteByPlayerId(playerId);
+
+        // 事务提交后删除缓存
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        // 删除玩家信息缓存
+                        redisUtil.delete(RedisKeyConstants.USER_PLAYER.getKey(playerId));
+                        // 删除玩家展示缓存
+                        redisUtil.delete(RedisKeyConstants.PLAYER_SHOW.getKey(playerId));
+                        // 删除存档列表缓存
+                        redisUtil.delete(RedisKeyConstants.SAVE_LIST.getKey(userId));
+                        // 删除该玩家的所有存档详情缓存
+                        for (SaveInfo s : saveInfoList) {
+                            redisUtil.delete(RedisKeyConstants.SAVE_DETAIL.getKey(userId, s.getId()));
+                        }
+                        logger.info("用户ID[{}]角色ID[{}]:删除角色并同步清理缓存完成", userId, playerId);
+                    }
+                }
+        );
     }
 
     @Override

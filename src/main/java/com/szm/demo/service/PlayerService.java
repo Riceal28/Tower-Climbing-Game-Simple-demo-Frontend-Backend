@@ -18,5 +18,6 @@ public interface PlayerService {
     void resetPlayer(Long userId);
     Long checkOverflowExp();
     void tryLevelUp();
+    void deletePlayer(Long playerId);
     void afterActionByPlayer(UserPlayerInfo userPlayerInfo, ActionInfo actionInfo);
 }

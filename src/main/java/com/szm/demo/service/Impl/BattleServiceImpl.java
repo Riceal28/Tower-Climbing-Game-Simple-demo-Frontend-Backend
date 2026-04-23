@@ -160,6 +160,7 @@ public class BattleServiceImpl implements BattleService {
             // 不超过上限
             battleInfo.setPlayerCurrentHp(Math.min(levelInfo.getMaxHp(), battleInfo.getPlayerCurrentHp()));
             battleInfo.setPlayerCurrentMp(Math.min(levelInfo.getMaxMp(), battleInfo.getPlayerCurrentMp()));
+            logger.info("即将更新战斗信息[{}]",battleInfo);
             battleProviderService.updateBattle(battleInfo);
         } else {
             // 攻击魔物
@@ -179,6 +180,7 @@ public class BattleServiceImpl implements BattleService {
             battleInfo.setMonsterCurrentHp(Math.max(0, battleInfo.getMonsterCurrentHp() - remainingDamage));
             battleInfo.setMonsterCurrentMp(battleInfo.getMonsterCurrentMp() + forMp);
             battleInfo.setPlayerCurrentMp(battleInfo.getPlayerCurrentMp() - mpCost);
+            logger.info("即将更新战斗信息[{}]",battleInfo);
             battleProviderService.updateBattle(battleInfo);
         }
     }
@@ -263,7 +265,7 @@ public class BattleServiceImpl implements BattleService {
 
         // 记录日志
         String log = buildPlayerActionLog(actionInfo, battleInfo);
-
+        logger.info("更新战斗信息的入参战斗信息[{}]",battleInfo);
         // 执行技能效果
         afterOneAction(battleInfo, actionInfo);
 
@@ -388,9 +390,11 @@ public class BattleServiceImpl implements BattleService {
     private void bindPlayerActions(Long battleId) {
         // 获取角色等级对应的技能模板
         UserPlayerInfo playerInfo = playerProviderService.getPlayerInfo();
-        List<PlayerActionGroup> actionGroups = playerActionGroupMapper.getByLId((long) playerInfo.getLevel());
+        LevelInfo levelInfo = levelService.getLevelInfo(playerInfo.getPlayerClass(),playerInfo.getLevel());
+        logger.info("当前角色等级ID[{}]",levelInfo.getId());
+        List<PlayerActionGroup> actionGroups = playerActionGroupMapper.getByLId(levelInfo.getId());
         if (actionGroups == null || actionGroups.isEmpty()) {
-            logger.warn("角色等级[{}]未配置技能组", playerInfo.getLevel());
+            logger.warn("角色等级ID[{}]未配置技能组", levelInfo.getId());
             return;
         }
 

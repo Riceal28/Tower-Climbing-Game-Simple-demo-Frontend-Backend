@@ -83,4 +83,7 @@ public interface PlayerActionInfoMapper {
 
     @Delete("DELETE FROM player_action_info WHERE battle_id=#{battleId}")
     int deleteByBattleId(@Param("battleId") Long battleId);
+
+    @Delete("DELETE FROM player_action_info WHERE player_id=#{playerId}")
+    int deleteByPlayerId(@Param("playerId")Long playerId);
 }

@@ -65,13 +65,16 @@ public class LevelServiceImpl implements LevelService {
     public Long levelUp(Long extraExp) {
         Long playerId = GameContext.getPlayerId();
         UserPlayerInfo userPlayerInfo = playerProviderService.getPlayerInfo();
+        logger.info("尝试捕获用户信息[{}]",userPlayerInfo);
         int nextLevel = userPlayerInfo.getLevel() + 1;
+        logger.info("nextLevel值[{}]",nextLevel);
         if (nextLevel >= 37) {//todo:修改等级上限配置
             userPlayerInfo.setExp(0L);
             playerProviderService.updatePlayerInfo(userPlayerInfo);
             return -1L;
         }
         LevelInfo levelInfo = getLevelInfo(userPlayerInfo.getPlayerClass(),nextLevel);
+        logger.info("尝试升级:捕获的等级信息[{}]",levelInfo);
         try {
             userPlayerInfo.setLevel(nextLevel);
             userPlayerInfo.setExp(extraExp);

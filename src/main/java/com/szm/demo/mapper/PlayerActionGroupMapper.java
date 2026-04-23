@@ -11,5 +11,5 @@ import java.util.List;
 public interface PlayerActionGroupMapper {
 
     @Select("SELECT * FROM player_action_group WHERE level_id=#{levelId}")
-    List<PlayerActionGroup> getByLId(@Param("levelId") Long levelId);
+    List<PlayerActionGroup> getByLId(@Param("levelId") Integer levelId);
 }
